@@ -5,6 +5,16 @@ import React, { useState, useRef } from 'react'
 import StoreInfo from '../components/StoreInfo'
 import Link from 'next/link'
 
+type MenuItem = {
+  name: string
+  desc: string
+  price: number
+  img: string
+  qty?: number
+  note?: string
+  id?: number
+}
+
 const menuData = [
   {
     category: 'Appetizers',
@@ -63,11 +73,11 @@ const menuData = [
 
 export default function AppMenu() {
   const [selectedCategory, setSelectedCategory] = useState('Appetizers')
-  const [modalItem, setModalItem] = useState<any>(null)
+  const [modalItem, setModalItem] = useState<MenuItem | null>(null)
   const [modalQty, setModalQty] = useState(1)
   const [modalNote, setModalNote] = useState('')
-  const [cart, setCart] = useState<any[]>([])
-  const [recentItem, setRecentItem] = useState<any | null>(null)
+  const [cart, setCart] = useState<MenuItem[]>([])
+  const [recentItem, setRecentItem] = useState<MenuItem | null>(null)
   const categories = menuData.map((c) => c.category)
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
 
@@ -81,7 +91,7 @@ export default function AppMenu() {
     }, 50)
   }
 
-  const openModal = (item: any) => {
+  const openModal = (item: MenuItem) => {
     setModalItem(item)
     setModalQty(1)
     setModalNote('')
@@ -108,8 +118,8 @@ export default function AppMenu() {
     setRecentItem(null)
   }
   // 统计总价和数量
-  const totalQty = cart.reduce((sum, i) => sum + i.qty, 0)
-  const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
+  const totalQty = cart.reduce((sum, i) => sum + (i.qty ?? 1), 0)
+  const totalPrice = cart.reduce((sum, i) => sum + i.price * (i.qty ?? 1), 0)
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center w-full">

@@ -29,13 +29,11 @@ const initialCart = [
 ]
 
 export default function CartPage() {
-  const [cart, setCart] = useState(initialCart)
+  const [cart] = useState(initialCart)
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
     'delivery'
   )
-  const [address, setAddress] = useState(
-    '2/51-53 Stanbel Rd, Salisbury Plain, SA 5109'
-  )
+  const [address] = useState('2/51-53 Stanbel Rd, Salisbury Plain, SA 5109')
   const deliveryFee = 4.99
   const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
   const finalPrice =
@@ -51,7 +49,7 @@ export default function CartPage() {
           </div>
           {/* 购物车商品列表 */}
           <div className="flex flex-col gap-2">
-            {cart.map((item, idx) => (
+            {cart.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-col border-b border-dashed border-gray-400 pb-2 mb-2">
