@@ -1,17 +1,15 @@
 'use client'
 import TopBar from '../components/TopBar'
 import StoreInfo from '../components/StoreInfo'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCartStore, CartState, CartItem } from '../../store/cartStore'
 
-const CART_KEY = 'cart_data'
-
 export default function CartPage() {
   const cart = useCartStore((state: CartState) => state.cart)
-  console.log(cart)
-  const setCart = useCartStore((state: CartState) => state.setCart)
+  const safeCart = Array.isArray(cart) ? cart : []
+  console.log(safeCart)
   const updateQty = useCartStore((state: CartState) => state.updateQty)
   const updateNote = useCartStore((state: CartState) => state.updateNote)
   const removeFromCart = useCartStore(
@@ -27,7 +25,7 @@ export default function CartPage() {
   const [editNote, setEditNote] = useState('')
 
   const deliveryFee = 4.99
-  const totalPrice = cart.reduce(
+  const totalPrice = safeCart.reduce(
     (sum: number, i: CartItem) => sum + i.price * i.qty,
     0
   )
@@ -51,26 +49,6 @@ export default function CartPage() {
     setEditingItem(null)
   }
 
-  // 组件挂载时同步 localStorage 数据
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(CART_KEY)
-      if (stored) {
-        try {
-          setCart(JSON.parse(stored))
-        } catch {}
-      }
-    }
-  }, [setCart])
-
-  // cart 变化时写入 localStorage
-  useEffect(() => {
-    // console.log(cart)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(CART_KEY, JSON.stringify(cart))
-    }
-  }, [cart])
-
   return (
     <div className="min-h-screen bg-white flex flex-col justify-center items-center w-full">
       <div className="w-full max-w-[400px] flex flex-col items-center bg-[#222] min-h-screen rounded-t-2xl">
@@ -81,7 +59,7 @@ export default function CartPage() {
           </div>
           {/* 购物车商品列表 */}
           <div className="flex flex-col gap-2">
-            {cart.map((item: CartItem) => (
+            {safeCart.map((item: CartItem) => (
               <div
                 key={item.id}
                 className="flex flex-col border-b border-dashed border-gray-400 pb-2 mb-2">

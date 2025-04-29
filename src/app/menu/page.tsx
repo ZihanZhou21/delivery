@@ -121,7 +121,7 @@ export default function AppMenu() {
   }
   // 移除最近添加的小条
   const handleRemoveRecent = () => {
-    if (recentItem && recentItem.id) {
+    if (recentItem && recentItem.id !== undefined) {
       removeFromCart(recentItem.id)
     }
     setRecentItem(null)
