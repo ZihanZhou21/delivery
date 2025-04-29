@@ -69,7 +69,7 @@ const menuData = [
       },
     ],
   },
-  // 可继续添加其他分类
+  // More categories can be added
 ]
 
 export default function AppMenu() {
@@ -104,7 +104,7 @@ export default function AppMenu() {
   }
   const closeModal = () => setModalItem(null)
 
-  // 添加到购物车
+  // Add to cart
   const handleAddToCart = () => {
     if (!modalItem) return
     const newItem = {
@@ -120,14 +120,14 @@ export default function AppMenu() {
     setRecentItem(newItem)
     setModalItem(null)
   }
-  // 移除最近添加的小条
+  // Remove recently added item
   const handleRemoveRecent = () => {
     if (recentItem && recentItem.id !== undefined) {
       removeFromCart(recentItem.id)
     }
     setRecentItem(null)
   }
-  // 统计总价和数量
+  // Calculate total price and quantity
   const totalQty = safeCart.reduce(
     (sum: number, i: CartItem) => sum + (i.qty ?? 1),
     0
@@ -145,7 +145,7 @@ export default function AppMenu() {
           <div className="text-[#FDC519] text-2xl font-extrabold text-center mt-2 tracking-wide">
             OUR MENU
           </div>
-          {/* 分类选择 */}
+          {/* Category selection */}
           <div className="flex justify-center mt-2 mb-4">
             <select
               className="text-white bg-transparent border border-[#FDC519] rounded-lg px-6 py-2 text-lg font-semibold focus:outline-none"
@@ -158,7 +158,7 @@ export default function AppMenu() {
               ))}
             </select>
           </div>
-          {/* 菜单项列表 */}
+          {/* Menu item list */}
           {menuData.map((cat) => (
             <div
               key={cat.category}
@@ -210,25 +210,25 @@ export default function AppMenu() {
           ))}
           <StoreInfo />
         </div>
-        {/* 弹窗部分 */}
+        {/* Modal section */}
         {modalItem && (
           <div className="fixed inset-0 z-50 flex items-end justify-center">
-            {/* 半透明黑色蒙版 */}
+            {/* Black semi-transparent mask */}
             <div className="absolute inset-0 flex justify-center items-end">
               <div
                 className="bg-black/80 w-full max-w-[400px] h-full"
                 onClick={closeModal}></div>
             </div>
-            {/* 底部弹窗表单 */}
+            {/* Bottom modal form */}
             <div className="relative z-10 w-full max-w-[400px] flex flex-col">
-              {/* 关闭按钮 */}
+              {/* Close button */}
               <button
                 className="absolute left-1/2 -top-6 -translate-x-1/2 bg-[#FDC519] w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold z-20 border-4 border-white"
                 onClick={closeModal}
                 style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                 ×
               </button>
-              {/* 大图 */}
+              {/* Large image */}
               <div className="w-full h-48 relative">
                 <Image
                   src={modalItem.img}
@@ -247,7 +247,7 @@ export default function AppMenu() {
                     {modalItem.desc}
                   </div>
                 </div>
-                {/* 数量选择 */}
+                {/* Quantity selection */}
                 <div className="flex items-center justify-between mt-2">
                   <div className="text-white text-xl">Quantity</div>
                   <div className="flex items-center bg-black rounded-lg px-3 py-2 min-w-[90px] justify-between">
@@ -266,7 +266,7 @@ export default function AppMenu() {
                     </button>
                   </div>
                 </div>
-                {/* 备注输入 */}
+                {/* Note input */}
                 <div>
                   <div className="text-white text-lg font-bold mb-1">Notes</div>
                   <textarea
@@ -276,7 +276,7 @@ export default function AppMenu() {
                     onChange={(e) => setModalNote(e.target.value)}
                   />
                 </div>
-                {/* 添加到订单按钮和价格 */}
+                {/* Add to order button and price */}
                 <div className="flex items-center gap-2 mt-2">
                   <button
                     className="flex-1 bg-[#FDC519] text-black font-bold text-xl rounded-xl py-3 hover:bg-yellow-400 transition"
@@ -291,10 +291,10 @@ export default function AppMenu() {
             </div>
           </div>
         )}
-        {/* 悬浮条和小悬浮条 */}
+        {/* Floating bar and mini floating bar */}
         {safeCart.length > 0 && (
           <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-[400px] flex flex-col items-center pointer-events-none">
-            {/* 小悬浮条 */}
+            {/* Mini floating bar */}
             {recentItem && (
               <div
                 className="w-2/3 mx-auto flex items-center justify-between bg-[#FDC519]/90 rounded-full shadow-lg px-2 pl-4 py-2 gap-4 mb-2 pointer-events-auto animate-fade-in-up"
@@ -309,7 +309,7 @@ export default function AppMenu() {
                 </button>
               </div>
             )}
-            {/* 主悬浮条 */}
+            {/* Main floating bar */}
             <div className="w-full flex items-center justify-between bg-white shadow-2xl px-4 py-4 pointer-events-auto">
               <div className="flex flex-col">
                 <span className="font-extrabold text-[#E53935] text-2xl">

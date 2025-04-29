@@ -22,7 +22,7 @@ export default function StoreInfo() {
           <span>06.00 pm - 11:30 pm</span>
         </div>
       </div>
-      {/* 黄色虚线分隔线 */}
+      {/* Yellow dashed divider */}
       <div className="border-t border-dashed border-[#FFD600]/30 my-2"></div>
       <div className="font-bold text-lg mt-2">Contact Detail:</div>
       <div>Unit 4/24 Vale Ave, Valley View SA 5093</div>
@@ -34,7 +34,7 @@ export default function StoreInfo() {
           </svg>
         </a>
         <a href="#" className="bg-white rounded-full p-2">
-          {/* Instagram 图标 */}
+          {/* Instagram icon */}
           <svg width="24" height="24" fill="black" viewBox="0 0 24 24">
             <rect
               x="2"

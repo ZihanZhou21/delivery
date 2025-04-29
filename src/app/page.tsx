@@ -8,8 +8,8 @@ import StoreNotice, {
   isStoreOpenNow,
 } from './components/StoreNotice'
 import { useAddressStore } from './store/addressStore'
-// 移除未使用的 Link 导入
-// 移除不存在的 DeliveryMethodSelector 导入
+// Remove unused Link import
+// Remove non-existent DeliveryMethodSelector import
 
 export default function Home() {
   const [showAddressModal, setShowAddressModal] = useState(false)
@@ -18,14 +18,14 @@ export default function Home() {
   const setAddress = useAddressStore((state) => state.setAddress)
   const [addressInput, setAddressInput] = useState(address)
 
-  // 判断StoreNotice是否应显示
+  // Determine whether StoreNotice should be displayed
   const closedAllDay = isStoreClosedAllDay()
   const openNow = isStoreOpenNow()
   const showYellow = !closedAllDay && !openNow
   const showRed = closedAllDay
   const showNotice = showYellow || showRed
 
-  // 处理点击Delivery卡片
+  // Handle click on Delivery card
   const handleDeliveryClick = () => {
     if (!address) {
       setShowAddressModal(true)
@@ -34,19 +34,19 @@ export default function Home() {
     }
   }
 
-  // 处理点击Store Pickup卡片
+  // Handle click on Store Pickup card
   const handlePickupClick = () => {
     setSelected('pickup')
   }
 
-  // 处理更改地址
+  // Handle address change
   const handleChangeAddress = () => {
     setShowAddressModal(true)
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center w-full">
-      {/* 主内容区域加深色背景和圆角 */}
+      {/* Main content area with dark background and rounded corners */}
       <div className="w-full max-w-[400px] flex flex-col items-center bg-[#222] rounded-2xl min-h-screen">
         <TopBar />
         <div className="w-full px-4 py-6 flex flex-col gap-2 pb-24">

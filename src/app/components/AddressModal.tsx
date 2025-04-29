@@ -25,11 +25,11 @@ const AddressModal: React.FC<AddressModalProps> = ({
   return (
     <div className="fixed inset-0 flex items-end justify-center z-50">
       <div className="w-full max-w-[400px] h-full relative flex flex-col justify-end">
-        {/* 黑色半透明蒙版 */}
+        {/* Black semi-transparent mask */}
         <div
           className="absolute inset-0 bg-black/75 z-10 rounded-t-2xl"
           onClick={onClose}></div>
-        {/* 地址输入表单弹窗 */}
+        {/* Address input modal */}
         <div className="relative z-20 rounded-t-2xl bg-[#333] p-6 pb-4">
           <button
             className="absolute left-1/2 -top-6 -translate-x-1/2 bg-[#FDC519] w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold"

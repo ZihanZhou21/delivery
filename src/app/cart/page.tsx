@@ -11,7 +11,6 @@ import { useAddressStore } from '../store/addressStore'
 export default function CartPage() {
   const cart = useCartStore((state: CartState) => state.cart)
   const safeCart = Array.isArray(cart) ? cart : []
-  console.log(safeCart)
   const updateQty = useCartStore((state: CartState) => state.updateQty)
   const updateNote = useCartStore((state: CartState) => state.updateNote)
   const removeFromCart = useCartStore(
@@ -78,7 +77,7 @@ export default function CartPage() {
           <div className="text-[#FDC519] text-2xl font-extrabold text-center mt-2 tracking-wide mb-4">
             ORDER CONFIRMATION
           </div>
-          {/* 购物车商品列表 */}
+          {/* Cart item list */}
           <div className="flex flex-col gap-2">
             {safeCart.map((item: CartItem) => (
               <div
@@ -106,7 +105,7 @@ export default function CartPage() {
             ))}
           </div>
 
-          {/* 编辑模态框 */}
+          {/* Edit modal */}
           {editingItem && (
             <div className="fixed inset-0 z-50 flex items-end justify-center">
               <div className="absolute inset-0 flex justify-center items-end">
@@ -139,7 +138,7 @@ export default function CartPage() {
                       ${editingItem.price.toFixed(2)}
                     </div>
                   </div>
-                  {/* 数量选择 */}
+                  {/* Quantity selection */}
                   <div className="flex items-center justify-between mt-2">
                     <div className="text-white text-xl">Quantity</div>
                     <div className="flex items-center bg-black rounded-lg px-3 py-2 min-w-[90px] justify-between">
@@ -158,7 +157,7 @@ export default function CartPage() {
                       </button>
                     </div>
                   </div>
-                  {/* 备注输入 */}
+                  {/* Note input */}
                   <div>
                     <div className="text-white text-lg font-bold mb-1">
                       Notes
@@ -170,7 +169,7 @@ export default function CartPage() {
                       onChange={(e) => setEditNote(e.target.value)}
                     />
                   </div>
-                  {/* Apply Changes按钮 */}
+                  {/* Apply Changes button */}
                   <button
                     className="w-full bg-[#FDC519] text-black font-bold text-xl rounded-xl py-3 hover:bg-yellow-400 transition mt-2"
                     onClick={handleApplyChanges}>
@@ -181,19 +180,19 @@ export default function CartPage() {
             </div>
           )}
 
-          {/* 备注和添加更多 */}
+          {/* Note and add more */}
           <div className="flex items-center justify-between text-gray-200 text-sm mb-2">
             <button className="">+ Add note</button>
             <Link href="/menu" className="text-[#FDC519]">
               + Add more items
             </Link>
           </div>
-          {/* 总价 */}
+          {/* Total price */}
           <div className="flex items-center justify-between text-white text-lg font-bold mt-2 mb-4">
             <span>Total Price</span>
             <span className="text-[#FDC519]">${finalPrice.toFixed(2)}</span>
           </div>
-          {/* 配送方式选择 */}
+          {/* Delivery method selection */}
           <div className="bg-black rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center gap-2 mb-2">
               <button
@@ -239,7 +238,7 @@ export default function CartPage() {
           </div>
           <StoreInfo />
         </div>
-        {/* 黄色悬浮条 */}
+        {/* Yellow floating bar */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-[400px] flex items-center justify-between bg-[#FDC519] px-4 py-4 font-extrabold text-xl">
           <span className="text-[#E53935]">${finalPrice.toFixed(2)}</span>
           {safeCart.length > 0 ? (
@@ -260,7 +259,7 @@ export default function CartPage() {
           )}
         </div>
       </div>
-      {/* 空购物车提示悬浮条 */}
+      {/* Empty cart tip floating bar */}
       {showEmptyTip && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#E53935] text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg">
           Please add at least one item.
