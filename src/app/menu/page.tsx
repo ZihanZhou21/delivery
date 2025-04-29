@@ -82,6 +82,7 @@ export default function AppMenu() {
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const addToCart = useCartStore((state: CartState) => state.addToCart)
   const cart = useCartStore((state: CartState) => state.cart)
+  const safeCart = Array.isArray(cart) ? cart : []
   const removeFromCart = useCartStore(
     (state: CartState) => state.removeFromCart
   )
@@ -127,11 +128,11 @@ export default function AppMenu() {
     setRecentItem(null)
   }
   // 统计总价和数量
-  const totalQty = cart.reduce(
+  const totalQty = safeCart.reduce(
     (sum: number, i: CartItem) => sum + (i.qty ?? 1),
     0
   )
-  const totalPrice = cart.reduce(
+  const totalPrice = safeCart.reduce(
     (sum: number, i: CartItem) => sum + i.price * (i.qty ?? 1),
     0
   )
@@ -291,7 +292,7 @@ export default function AppMenu() {
           </div>
         )}
         {/* 悬浮条和小悬浮条 */}
-        {cart.length > 0 && (
+        {safeCart.length > 0 && (
           <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-[400px] flex flex-col items-center pointer-events-none">
             {/* 小悬浮条 */}
             {recentItem && (
