@@ -242,18 +242,22 @@ export default function CartPage() {
         {/* 黄色悬浮条 */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-[400px] flex items-center justify-between bg-[#FDC519] px-4 py-4 font-extrabold text-xl">
           <span className="text-[#E53935]">${finalPrice.toFixed(2)}</span>
-          <button
-            className="text-black font-extrabold ml-auto"
-            onClick={() => {
-              if (safeCart.length === 0) {
+          {safeCart.length > 0 ? (
+            <Link href="/payment" className="ml-auto">
+              <button className="text-black font-extrabold">
+                Place Order &gt;
+              </button>
+            </Link>
+          ) : (
+            <button
+              className="text-black font-extrabold ml-auto"
+              onClick={() => {
                 setShowEmptyTip(true)
                 setTimeout(() => setShowEmptyTip(false), 3000)
-                return
-              }
-              window.location.href = `/payment?price=${finalPrice.toFixed(2)}`
-            }}>
-            Place Order &gt;
-          </button>
+              }}>
+              Place Order &gt;
+            </button>
+          )}
         </div>
       </div>
       {/* 空购物车提示悬浮条 */}
