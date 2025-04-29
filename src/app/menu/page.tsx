@@ -82,6 +82,9 @@ export default function AppMenu() {
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const addToCart = useCartStore((state: CartState) => state.addToCart)
   const cart = useCartStore((state: CartState) => state.cart)
+  const removeFromCart = useCartStore(
+    (state: CartState) => state.removeFromCart
+  )
 
   const handleSelect = (cat: string) => {
     setSelectedCategory(cat)
@@ -118,6 +121,9 @@ export default function AppMenu() {
   }
   // 移除最近添加的小条
   const handleRemoveRecent = () => {
+    if (recentItem && recentItem.id) {
+      removeFromCart(recentItem.id)
+    }
     setRecentItem(null)
   }
   // 统计总价和数量

@@ -61,7 +61,7 @@ export default function CartPage() {
         } catch {}
       }
     }
-  }, [])
+  }, [setCart])
 
   // cart 变化时写入 localStorage
   useEffect(() => {

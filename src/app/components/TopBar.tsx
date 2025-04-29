@@ -14,18 +14,21 @@ export default function TopBar() {
             Menu
           </button>
         </Link>
-        <button className="bg-white rounded-xl p-2 flex items-center justify-center">
-          <svg
-            width="24"
-            height="24"
-            fill="none"
-            stroke="black"
-            strokeWidth="2"
-            viewBox="0 0 24 24">
-            <rect x="6" y="6" width="12" height="12" rx="2" />
-            <path d="M9 10h6M9 14h6" />
-          </svg>
-        </button>
+        <Link href="/cart">
+          <button className="bg-white rounded-xl p-2 flex items-center justify-center">
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke="black"
+              strokeWidth="2"
+              viewBox="0 0 24 24">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+          </button>
+        </Link>
       </div>
     </div>
   )
