@@ -4,6 +4,7 @@ import Image from 'next/image'
 import React, { useState, useRef } from 'react'
 import StoreInfo from '../components/StoreInfo'
 import Link from 'next/link'
+import { useCartStore, CartState, CartItem } from '../../store/cartStore'
 
 type MenuItem = {
   name: string
@@ -76,10 +77,11 @@ export default function AppMenu() {
   const [modalItem, setModalItem] = useState<MenuItem | null>(null)
   const [modalQty, setModalQty] = useState(1)
   const [modalNote, setModalNote] = useState('')
-  const [cart, setCart] = useState<MenuItem[]>([])
   const [recentItem, setRecentItem] = useState<MenuItem | null>(null)
   const categories = menuData.map((c) => c.category)
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
+  const addToCart = useCartStore((state: CartState) => state.addToCart)
+  const cart = useCartStore((state: CartState) => state.cart)
 
   const handleSelect = (cat: string) => {
     setSelectedCategory(cat)
@@ -106,20 +108,27 @@ export default function AppMenu() {
       qty: modalQty,
       note: modalNote,
       id: Date.now() + Math.random(),
+      price: modalItem.price,
+      name: modalItem.name,
+      img: modalItem.img,
     }
-    setCart((prev) => [...prev, newItem])
+    addToCart(newItem)
     setRecentItem(newItem)
     setModalItem(null)
   }
   // 移除最近添加的小条
   const handleRemoveRecent = () => {
-    if (!recentItem) return
-    setCart((prev) => prev.filter((i) => i.id !== recentItem.id))
     setRecentItem(null)
   }
   // 统计总价和数量
-  const totalQty = cart.reduce((sum, i) => sum + (i.qty ?? 1), 0)
-  const totalPrice = cart.reduce((sum, i) => sum + i.price * (i.qty ?? 1), 0)
+  const totalQty = cart.reduce(
+    (sum: number, i: CartItem) => sum + (i.qty ?? 1),
+    0
+  )
+  const totalPrice = cart.reduce(
+    (sum: number, i: CartItem) => sum + i.price * (i.qty ?? 1),
+    0
+  )
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center w-full">
@@ -222,7 +231,7 @@ export default function AppMenu() {
                   style={{ objectFit: 'cover' }}
                 />
               </div>
-              <div className="bg-[#333] p-5 flex flex-col gap-4 rounded-t-2xl">
+              <div className="bg-[#333] p-5 flex flex-col gap-4">
                 <div>
                   <div className="text-white text-2xl font-extrabold">
                     {modalItem.name}

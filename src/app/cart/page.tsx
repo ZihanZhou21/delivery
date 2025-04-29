@@ -1,46 +1,78 @@
 'use client'
 import TopBar from '../components/TopBar'
 import StoreInfo from '../components/StoreInfo'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useCartStore, CartState, CartItem } from '../../store/cartStore'
 
-// 假设cart数据结构如下，实际可用context或props传递
-const initialCart = [
-  {
-    id: 1,
-    name: 'Bruschetta',
-    price: 12.99,
-    qty: 1,
-    note: '',
-  },
-  {
-    id: 2,
-    name: 'Spinach & Artichoke Dip',
-    price: 10.99,
-    qty: 2,
-    note: '',
-  },
-  {
-    id: 3,
-    name: 'Egg and Bacon Canapés',
-    price: 9.99,
-    qty: 2,
-    note: '',
-  },
-]
+const CART_KEY = 'cart_data'
 
 export default function CartPage() {
-  const [cart] = useState(initialCart)
+  const cart = useCartStore((state: CartState) => state.cart)
+  console.log(cart)
+  const setCart = useCartStore((state: CartState) => state.setCart)
+  const updateQty = useCartStore((state: CartState) => state.updateQty)
+  const updateNote = useCartStore((state: CartState) => state.updateNote)
+  const removeFromCart = useCartStore(
+    (state: CartState) => state.removeFromCart
+  )
+
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
     'delivery'
   )
   const [address] = useState('2/51-53 Stanbel Rd, Salisbury Plain, SA 5109')
+  const [editingItem, setEditingItem] = useState<CartItem | null>(null)
+  const [editQty, setEditQty] = useState(1)
+  const [editNote, setEditNote] = useState('')
+
   const deliveryFee = 4.99
-  const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0)
+  const totalPrice = cart.reduce(
+    (sum: number, i: CartItem) => sum + i.price * i.qty,
+    0
+  )
   const finalPrice =
     deliveryType === 'delivery' ? totalPrice + deliveryFee : totalPrice
 
+  const handleEdit = (item: CartItem) => {
+    setEditingItem(item)
+    setEditQty(item.qty)
+    setEditNote(item.note || '')
+  }
+
+  const handleApplyChanges = () => {
+    if (!editingItem) return
+    if (editQty === 0) {
+      removeFromCart(editingItem.id)
+    } else {
+      updateQty(editingItem.id, editQty)
+      updateNote(editingItem.id, editNote)
+    }
+    setEditingItem(null)
+  }
+
+  // 组件挂载时同步 localStorage 数据
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(CART_KEY)
+      if (stored) {
+        try {
+          setCart(JSON.parse(stored))
+        } catch {}
+      }
+    }
+  }, [])
+
+  // cart 变化时写入 localStorage
+  useEffect(() => {
+    // console.log(cart)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart))
+    }
+  }, [cart])
+
   return (
-    <div className="min-h-screen bg-white  flex flex-col  justify-center items-center w-full ">
+    <div className="min-h-screen bg-white flex flex-col justify-center items-center w-full">
       <div className="w-full max-w-[400px] flex flex-col items-center bg-[#222] min-h-screen rounded-t-2xl">
         <TopBar />
         <div className="w-full px-4 pb-20 py-6 flex flex-col gap-4 flex-1">
@@ -49,7 +81,7 @@ export default function CartPage() {
           </div>
           {/* 购物车商品列表 */}
           <div className="flex flex-col gap-2">
-            {cart.map((item) => (
+            {cart.map((item: CartItem) => (
               <div
                 key={item.id}
                 className="flex flex-col border-b border-dashed border-gray-400 pb-2 mb-2">
@@ -65,15 +97,97 @@ export default function CartPage() {
                   <span>
                     ${item.price.toFixed(2)} x {item.qty}
                   </span>
-                  <button className=" text-xs underline">Edit &gt;</button>
+                  <button
+                    className="text-xs underline"
+                    onClick={() => handleEdit(item)}>
+                    Edit &gt;
+                  </button>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* 编辑模态框 */}
+          {editingItem && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center">
+              <div className="absolute inset-0 flex justify-center items-end">
+                <div
+                  className="bg-black/80 w-full max-w-[400px] h-full"
+                  onClick={() => setEditingItem(null)}></div>
+              </div>
+              <div className="relative z-10 w-full max-w-[400px] flex flex-col">
+                <button
+                  className="absolute left-1/2 -top-6 -translate-x-1/2 bg-[#FDC519] w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold z-20 border-4 border-white"
+                  onClick={() => setEditingItem(null)}
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+                  ×
+                </button>
+                <div className="w-full h-48 relative">
+                  <Image
+                    src={editingItem.img as string}
+                    alt={editingItem.name}
+                    fill
+                    className="object-cover w-full h-full rounded-t-2xl"
+                    style={{ objectFit: 'cover' }}
+                  />
+                </div>
+                <div className="bg-[#333] p-5 flex flex-col gap-4 rounded-t-2xl">
+                  <div>
+                    <div className="text-white text-2xl font-extrabold">
+                      {editingItem.name}
+                    </div>
+                    <div className="text-[#FDC519] text-xl font-bold mt-1">
+                      ${editingItem.price.toFixed(2)}
+                    </div>
+                  </div>
+                  {/* 数量选择 */}
+                  <div className="flex items-center justify-between mt-2">
+                    <div className="text-white text-xl">Quantity</div>
+                    <div className="flex items-center bg-black rounded-lg px-3 py-2 min-w-[90px] justify-between">
+                      <button
+                        className="text-white text-2xl px-2"
+                        onClick={() => setEditQty((q) => Math.max(0, q - 1))}>
+                        -
+                      </button>
+                      <span className="text-white text-xl font-bold w-8 text-center">
+                        {editQty.toString().padStart(2, '0')}
+                      </span>
+                      <button
+                        className="text-white text-2xl px-2"
+                        onClick={() => setEditQty((q) => q + 1)}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  {/* 备注输入 */}
+                  <div>
+                    <div className="text-white text-lg font-bold mb-1">
+                      Notes
+                    </div>
+                    <textarea
+                      className="w-full rounded-xl p-4 bg-black text-white placeholder:text-gray-400 text-base outline-none min-h-[60px] resize-none"
+                      placeholder="Add Note"
+                      value={editNote}
+                      onChange={(e) => setEditNote(e.target.value)}
+                    />
+                  </div>
+                  {/* Apply Changes按钮 */}
+                  <button
+                    className="w-full bg-[#FDC519] text-black font-bold text-xl rounded-xl py-3 hover:bg-yellow-400 transition mt-2"
+                    onClick={handleApplyChanges}>
+                    Apply Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 备注和添加更多 */}
           <div className="flex items-center justify-between text-gray-200 text-sm mb-2">
             <button className="">+ Add note</button>
-            <button className="text-[#FDC519]">+ Add more items</button>
+            <Link href="/menu" className="text-[#FDC519]">
+              + Add more items
+            </Link>
           </div>
           {/* 总价 */}
           <div className="flex items-center justify-between text-white text-lg font-bold mt-2 mb-4">
