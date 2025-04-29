@@ -25,32 +25,49 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       cart: [],
       addToCart: (item) => {
-        const exists = get().cart.find((i) => i.id === item.id)
+        const currentCart = Array.isArray(get().cart) ? get().cart : []
+        const exists = currentCart.find((i) => i.id === item.id)
         if (exists) {
           set({
-            cart: get().cart.map((i) =>
+            cart: currentCart.map((i) =>
               i.id === item.id ? { ...i, qty: i.qty + item.qty } : i
             ),
           })
         } else {
-          set({ cart: [...get().cart, item] })
+          set({ cart: [...currentCart, item] })
         }
       },
       removeFromCart: (id) =>
-        set({ cart: get().cart.filter((i) => i.id !== id) }),
+        set({
+          cart: (Array.isArray(get().cart) ? get().cart : []).filter(
+            (i) => i.id !== id
+          ),
+        }),
       updateQty: (id, qty) =>
         set({
-          cart: get().cart.map((i) => (i.id === id ? { ...i, qty } : i)),
+          cart: (Array.isArray(get().cart) ? get().cart : []).map((i) =>
+            i.id === id ? { ...i, qty } : i
+          ),
         }),
       updateNote: (id, note) =>
         set({
-          cart: get().cart.map((i) => (i.id === id ? { ...i, note } : i)),
+          cart: (Array.isArray(get().cart) ? get().cart : []).map((i) =>
+            i.id === id ? { ...i, note } : i
+          ),
         }),
       clearCart: () => set({ cart: [] }),
-      setCart: (cart) => set({ cart }),
+      setCart: (cart) => set({ cart: Array.isArray(cart) ? cart : [] }),
     }),
     {
       name: 'cart_data', // localStorage key
+      merge: (persisted, current) => {
+        // 保证cart一定是数组
+        const p = persisted as CartState
+        if (p && typeof p === 'object' && !Array.isArray(p.cart)) {
+          p.cart = []
+        }
+        return { ...current, ...p }
+      },
     }
   )
 )

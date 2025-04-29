@@ -86,7 +86,7 @@ export default function Home() {
           <div className="text-white text-lg font-semibold text-center">
             How would you like to Start!
           </div>
-          <div className="flex gap-4 w-full mt-2 flex-col sm:flex-row">
+          <div className="flex gap-4 w-full mt-2 flex-row">
             {/* Delivery 卡片 */}
             <div
               className={`flex-1 bg-[#FDC519] rounded-2xl flex flex-col items-center py-6 shadow-md relative cursor-pointer border-2 ${
@@ -134,7 +134,7 @@ export default function Home() {
             </div>
             {/* Store Pickup 卡片 */}
             <div
-              className={`flex-1 bg-[#FDC519] rounded-2xl flex flex-col items-center py-6 shadow-md mt-4 sm:mt-0 relative cursor-pointer border-2 ${
+              className={`flex-1 bg-[#FDC519] rounded-2xl flex flex-col items-center py-6 shadow-md relative cursor-pointer border-2 ${
                 selected === 'pickup'
                   ? 'border-[#FDC519]'
                   : 'border-transparent'
