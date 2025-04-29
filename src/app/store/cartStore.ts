@@ -11,6 +11,10 @@ export type CartItem = {
 
 export type CartState = {
   cart: CartItem[]
+  deliveryFee: number
+  finalPrice: number
+  setDeliveryFee: (fee: number) => void
+  setFinalPrice: (price: number) => void
   addToCart: (item: CartItem) => void
   removeFromCart: (id: number) => void
   updateQty: (id: number, qty: number) => void
@@ -21,6 +25,10 @@ export type CartState = {
 
 export const useCartStore = create<CartState>()((set, get) => ({
   cart: [],
+  deliveryFee: 0,
+  finalPrice: 0,
+  setDeliveryFee: (fee) => set({ deliveryFee: fee }),
+  setFinalPrice: (price) => set({ finalPrice: price }),
   addToCart: (item) => {
     const currentCart = Array.isArray(get().cart) ? get().cart : []
     const exists = currentCart.find((i) => i.id === item.id)

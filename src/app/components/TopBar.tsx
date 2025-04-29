@@ -6,7 +6,15 @@ export default function TopBar() {
   return (
     <div className="w-full flex items-center justify-between bg-[#FDC519] px-4 py-3 rounded-t-2xl">
       <div className="flex items-center gap-2 p-2">
-        <Image src="/egg-logo.png" alt="logo" width={100} height={62} />
+        <Link href="/">
+          <Image
+            src="/egg-logo.png"
+            alt="logo"
+            width={100}
+            height={62}
+            style={{ cursor: 'pointer' }}
+          />
+        </Link>
       </div>
       <div className="flex items-center gap-3">
         <Link href="/menu">

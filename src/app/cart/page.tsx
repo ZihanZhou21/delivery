@@ -4,7 +4,9 @@ import StoreInfo from '../components/StoreInfo'
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCartStore, CartState, CartItem } from '../../store/cartStore'
+import { useCartStore, CartState, CartItem } from '../store/cartStore'
+import AddressModal from '../components/AddressModal'
+import { useAddressStore } from '../store/addressStore'
 
 export default function CartPage() {
   const cart = useCartStore((state: CartState) => state.cart)
@@ -19,10 +21,14 @@ export default function CartPage() {
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
     'delivery'
   )
-  const [address] = useState('2/51-53 Stanbel Rd, Salisbury Plain, SA 5109')
+  const address = useAddressStore((state) => state.address)
+  const setAddress = useAddressStore((state) => state.setAddress)
+  const [showAddressModal, setShowAddressModal] = useState(false)
+  const [addressInput, setAddressInput] = useState(address)
   const [editingItem, setEditingItem] = useState<CartItem | null>(null)
   const [editQty, setEditQty] = useState(1)
   const [editNote, setEditNote] = useState('')
+  const [showEmptyTip, setShowEmptyTip] = useState(false)
 
   const deliveryFee = 4.99
   const totalPrice = safeCart.reduce(
@@ -31,6 +37,11 @@ export default function CartPage() {
   )
   const finalPrice =
     deliveryType === 'delivery' ? totalPrice + deliveryFee : totalPrice
+
+  const setFinalPrice = useCartStore((state: CartState) => state.setFinalPrice)
+  React.useEffect(() => {
+    setFinalPrice(finalPrice)
+  }, [finalPrice, setFinalPrice])
 
   const handleEdit = (item: CartItem) => {
     setEditingItem(item)
@@ -51,6 +62,16 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col justify-center items-center w-full">
+      <AddressModal
+        show={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        addressInput={addressInput}
+        setAddressInput={setAddressInput}
+        onSubmit={() => {
+          setAddress(addressInput)
+          setShowAddressModal(false)
+        }}
+      />
       <div className="w-full max-w-[400px] flex flex-col items-center bg-[#222] min-h-screen rounded-t-2xl">
         <TopBar />
         <div className="w-full px-4 pb-20 py-6 flex flex-col gap-4 flex-1">
@@ -192,7 +213,9 @@ export default function CartPage() {
               </span>
             </div>
             <div className="text-white text-sm ml-8 ">{address}</div>
-            <button className="text-[#FDC519] text-xs text-start underline ml-8 mt-1">
+            <button
+              className="text-[#FDC519] text-xs text-start underline ml-8 mt-1"
+              onClick={() => setShowAddressModal(true)}>
               Change Address
             </button>
             <div className="border-t border-dashed border-gray-600 my-2"></div>
@@ -218,12 +241,27 @@ export default function CartPage() {
         </div>
         {/* 黄色悬浮条 */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 z-40 w-full max-w-[400px] flex items-center justify-between bg-[#FDC519] px-4 py-4 font-extrabold text-xl">
-          <span className="text-[#E53935]">${finalPrice.toFixed(0)}</span>
-          <button className="ml-auto text-black font-extrabold">
+          <span className="text-[#E53935]">${finalPrice.toFixed(2)}</span>
+          <button
+            className="text-black font-extrabold ml-auto"
+            onClick={() => {
+              if (safeCart.length === 0) {
+                setShowEmptyTip(true)
+                setTimeout(() => setShowEmptyTip(false), 3000)
+                return
+              }
+              window.location.href = `/payment?price=${finalPrice.toFixed(2)}`
+            }}>
             Place Order &gt;
           </button>
         </div>
       </div>
+      {/* 空购物车提示悬浮条 */}
+      {showEmptyTip && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-[#E53935] text-white px-6 py-3 rounded-xl font-bold text-lg shadow-lg">
+          Please add at least one item.
+        </div>
+      )}
     </div>
   )
 }

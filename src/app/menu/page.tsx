@@ -4,7 +4,7 @@ import Image from 'next/image'
 import React, { useState, useRef } from 'react'
 import StoreInfo from '../components/StoreInfo'
 import Link from 'next/link'
-import { useCartStore, CartState, CartItem } from '../../store/cartStore'
+import { useCartStore, CartState, CartItem } from '../store/cartStore'
 
 type MenuItem = {
   name: string

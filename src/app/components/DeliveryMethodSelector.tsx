@@ -1,11 +1,12 @@
 import React from 'react'
 import Link from 'next/link'
+import AddressModal from './AddressModal'
 
 interface Props {
   selected: 'delivery' | 'pickup' | null
   setSelected: (v: 'delivery' | 'pickup' | null) => void
-  deliveryAddress: string
-  setDeliveryAddress: (v: string) => void
+  address: string
+  setAddress: (v: string) => void
   addressInput: string
   setAddressInput: (v: string) => void
   showAddressModal: boolean
@@ -18,8 +19,8 @@ interface Props {
 const DeliveryMethodSelector: React.FC<Props> = ({
   selected,
   setSelected,
-  deliveryAddress,
-  setDeliveryAddress,
+  address,
+  setAddress,
   addressInput,
   setAddressInput,
   showAddressModal,
@@ -29,53 +30,22 @@ const DeliveryMethodSelector: React.FC<Props> = ({
   handleChangeAddress,
 }) => {
   // 地址提交
-  const handleAddressSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setDeliveryAddress(addressInput)
+  const handleAddressSubmit = () => {
+    setAddress(addressInput)
     setShowAddressModal(false)
     setSelected('delivery')
   }
 
   return (
     <>
-      {/* 地址输入弹窗 */}
-      {showAddressModal && (
-        <div className="fixed inset-0 flex items-end justify-center z-50">
-          <div className="w-full max-w-[400px] h-full relative flex flex-col justify-end">
-            {/* 黑色半透明蒙版 */}
-            <div className="absolute inset-0 bg-black/75 z-10 rounded-t-2xl"></div>
-            {/* 地址输入表单弹窗 */}
-            <div className="relative z-20 rounded-t-2xl bg-[#333] p-6 pb-4">
-              <button
-                className="absolute left-1/2 -top-6 -translate-x-1/2 bg-[#FDC519] w-10 h-10 rounded-full flex items-center justify-center text-xl font-bold"
-                onClick={() => setShowAddressModal(false)}>
-                ×
-              </button>
-              <form onSubmit={handleAddressSubmit}>
-                <div className="text-white font-bold text-lg mb-2">
-                  Delivery Address
-                </div>
-                <input
-                  className="w-full rounded-lg p-4 bg-black text-white placeholder:text-gray-400 text-base mb-4 outline-none"
-                  placeholder="Enter Delivery Address"
-                  value={addressInput}
-                  onChange={(e) => setAddressInput(e.target.value)}
-                  required
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-[#FDC519] text-black font-bold text-xl rounded-xl py-3 mt-2 hover:bg-yellow-400 transition">
-                  Submit
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="flex-1 w-full flex flex-col items-center px-4 py-6 gap-6">
-        <div className="text-white text-2xl font-bold text-center mt-2">
-          Welcome to The Egg Eatery & Indian Cafe
-        </div>
+      <AddressModal
+        show={showAddressModal}
+        onClose={() => setShowAddressModal(false)}
+        addressInput={addressInput}
+        setAddressInput={setAddressInput}
+        onSubmit={handleAddressSubmit}
+      />
+      <div className="flex-1 w-full flex flex-col items-center px-4 pb-6 gap-6">
         <div className="text-white text-lg font-semibold text-center">
           How would you like to Start!
         </div>
@@ -111,7 +81,7 @@ const DeliveryMethodSelector: React.FC<Props> = ({
               Our Location
             </div>
             {/* 对勾 */}
-            {selected === 'delivery' && deliveryAddress && (
+            {selected === 'delivery' && address && (
               <div className="absolute top-3 right-3 w-6 h-6 bg-black rounded-full flex items-center justify-center">
                 <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                   <path
@@ -168,7 +138,7 @@ const DeliveryMethodSelector: React.FC<Props> = ({
           </div>
         </div>
         {/* 地址和费用，仅在delivery被选中且有地址时显示 */}
-        {selected === 'delivery' && deliveryAddress && (
+        {selected === 'delivery' && address && (
           <>
             <div className="w-full flex items-center justify-between mt-4">
               <div className="text-white font-bold text-lg flex items-center gap-2">
@@ -184,7 +154,7 @@ const DeliveryMethodSelector: React.FC<Props> = ({
               <svg width="22" height="22" fill="#FDC519" viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
               </svg>
-              <span>{deliveryAddress}</span>
+              <span>{address}</span>
             </div>
             <div className="w-full bg-black rounded-xl p-4 mt-4 text-white text-lg font-bold">
               Delivery Charges:
