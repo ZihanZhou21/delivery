@@ -5,6 +5,7 @@ import React, { useState, useRef } from 'react'
 import StoreInfo from '../components/StoreInfo'
 import Link from 'next/link'
 import { useCartStore, CartState, CartItem } from '../store/cartStore'
+import StoreNotice from '../components/StoreNotice'
 
 type MenuItem = {
   name: string
@@ -78,6 +79,8 @@ export default function AppMenu() {
   const [modalQty, setModalQty] = useState(1)
   const [modalNote, setModalNote] = useState('')
   const [recentItem, setRecentItem] = useState<MenuItem | null>(null)
+  const [showClosedTip, setShowClosedTip] = useState(false)
+  const [showNotice, setShowNotice] = useState(false)
   const categories = menuData.map((c) => c.category)
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const addToCart = useCartStore((state: CartState) => state.addToCart)
@@ -98,6 +101,12 @@ export default function AppMenu() {
   }
 
   const openModal = (item: MenuItem) => {
+    if (showNotice) {
+      setShowClosedTip(false)
+      setTimeout(() => setShowClosedTip(true), 0)
+      setTimeout(() => setShowClosedTip(false), 2500)
+      return
+    }
     setModalItem(item)
     setModalQty(1)
     setModalNote('')
@@ -141,7 +150,9 @@ export default function AppMenu() {
     <div className="min-h-screen bg-white flex flex-col items-center w-full">
       <div className="w-full max-w-[400px] flex flex-col items-center bg-[#222] rounded-2xl min-h-screen">
         <TopBar />
+
         <div className="w-full px-4 py-6 flex flex-col gap-2 pb-24">
+          <StoreNotice onVisibleChange={setShowNotice} />
           <div className="text-[#FDC519] text-2xl font-extrabold text-center mt-2 tracking-wide">
             OUR MENU
           </div>
@@ -209,6 +220,11 @@ export default function AppMenu() {
             </div>
           ))}
           <StoreInfo />
+          {showClosedTip && (
+            <div className="fixed bottom-20 max-w-[300px] left-1/2 -translate-x-1/2 z-50 bg-[#E53935] text-white px-6 py-3 mb-4 rounded-xl font-bold text-lg shadow-lg">
+              Online order is currently closed. You cannot add items now.
+            </div>
+          )}
         </div>
         {/* Modal section */}
         {modalItem && (
@@ -325,6 +341,7 @@ export default function AppMenu() {
                 </button>
               </Link>
             </div>
+            {/* Store closed tip */}
           </div>
         )}
       </div>

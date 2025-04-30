@@ -3,12 +3,8 @@ import { useState } from 'react'
 import StoreInfo from './components/StoreInfo'
 import TopBar from './components/TopBar'
 import DeliveryMethodSelector from './components/DeliveryMethodSelector'
-import StoreNotice, {
-  isStoreClosedAllDay,
-  isStoreOpenNow,
-} from './components/StoreNotice'
+import StoreNotice from './components/StoreNotice'
 import { useAddressStore } from './store/addressStore'
-// Remove unused Link import
 // Remove non-existent DeliveryMethodSelector import
 
 export default function Home() {
@@ -17,13 +13,7 @@ export default function Home() {
   const address = useAddressStore((state) => state.address)
   const setAddress = useAddressStore((state) => state.setAddress)
   const [addressInput, setAddressInput] = useState(address)
-
-  // Determine whether StoreNotice should be displayed
-  const closedAllDay = isStoreClosedAllDay()
-  const openNow = isStoreOpenNow()
-  const showYellow = !closedAllDay && !openNow
-  const showRed = closedAllDay
-  const showNotice = showYellow || showRed
+  const [showNotice, setShowNotice] = useState(false)
 
   // Handle click on Delivery card
   const handleDeliveryClick = () => {
@@ -53,7 +43,7 @@ export default function Home() {
           <div className="text-white text-2xl font-bold text-center mt-2 py-6">
             Welcome to The Egg Eatery & Indian Cafe
           </div>
-          {showNotice && <StoreNotice />}
+          <StoreNotice onVisibleChange={setShowNotice} />
           {!showNotice && (
             <DeliveryMethodSelector
               selected={selected}

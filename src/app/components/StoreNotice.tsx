@@ -1,58 +1,51 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import {
+  isStoreClosedAllDay,
+  isStoreOpenNow,
+  getStoreCloseTime,
+  getNextOpenTime,
+} from '../utils/storeTime'
 
-const storeHours: Record<string, { open: string; close: string } | null> = {
-  Mon: { open: '18:30', close: '23:30' },
-  Tue: null, // 休息
-  Wed: { open: '18:30', close: '23:30' },
-  Thu: { open: '18:30', close: '23:30' },
-  Fri: { open: '18:00', close: '01:30' },
-  Sat: { open: '18:00', close: '01:30' },
-  Sun: { open: '18:00', close: '23:30' },
+// 新增props: onVisibleChange
+interface StoreNoticeProps {
+  onVisibleChange?: (visible: boolean) => void
 }
 
-function getTodayKey() {
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  return days[new Date().getDay()]
-}
-
-export function isStoreClosedAllDay() {
-  const todayKey = getTodayKey()
-  return !storeHours[todayKey]
-}
-
-export function isStoreOpenNow() {
-  const todayKey = getTodayKey()
-  const hours = storeHours[todayKey]
-  if (!hours) return false
-  const now = new Date()
-  const [openH, openM] = hours.open.split(':').map(Number)
-  const [closeH, closeM] = hours.close.split(':').map(Number)
-
-  const open = new Date(now)
-  open.setHours(openH, openM, 0, 0)
-
-  const close = new Date(now)
-  close.setHours(closeH, closeM, 0, 0)
-  // 处理跨天
-  if (close <= open) close.setDate(close.getDate() + 1)
-
-  return now >= open && now <= close
-}
-
-const StoreNotice: React.FC = () => {
+const StoreNotice: React.FC<StoreNoticeProps> = ({ onVisibleChange }) => {
   const closedAllDay = isStoreClosedAllDay()
   const openNow = isStoreOpenNow()
-  const showYellow = !closedAllDay && !openNow
-  const showRed = closedAllDay
+  const closeTime = getStoreCloseTime()
+  const nextOpen = getNextOpenTime()
 
-  if (!showYellow && !showRed) return null
+  let showYellow = false
+  if (!closedAllDay && closeTime) {
+    const now = new Date()
+    const [closeH, closeM] = closeTime.split(':').map(Number)
+    const close = new Date(now)
+    close.setHours(closeH, closeM, 0, 0)
+    const diff = close.getTime() - now.getTime()
+    if (diff > 0 && diff <= 30 * 60 * 1000) {
+      showYellow = true
+    }
+  }
+
+  const showRed = !openNow
+
+  const visible = showYellow || showRed
+
+  useEffect(() => {
+    if (onVisibleChange) onVisibleChange(visible)
+  }, [visible, onVisibleChange])
+
+  if (!visible) return null
 
   return (
     <>
       {showYellow && (
         <div className="bg-[#FDC519] text-black rounded-2xl p-6 text-center font-bold text-lg mb-4">
-          Online ordering is now closed for today as our store is getting ready
-          to close.
+          The store will close at{' '}
+          <span className="text-[#E53935]">{closeTime}</span>. Online ordering
+          is now closed.
           <br />
           You&apos;re welcome to call us directly to check if we can still take
           your order.
@@ -67,9 +60,13 @@ const StoreNotice: React.FC = () => {
       )}
       {showRed && (
         <div className="bg-[#E53935] text-white rounded-2xl p-6 text-center font-bold text-lg mb-4">
-          Sorry We&apos;re Closed for Today,
+          Sorry, we&apos;re closed for now.
           <br />
-          Please Come Back Tomorrow!
+          {nextOpen && (
+            <span>
+              We will open next on {nextOpen.day} at {nextOpen.time}.
+            </span>
+          )}
         </div>
       )}
     </>
