@@ -49,7 +49,20 @@ export function getStoreCloseTime(): string | null {
 // 获取下次开门时间（字符串，24小时制）
 export function getNextOpenTime(): { day: string; time: string } | null {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const idx = new Date().getDay()
+  const now = new Date()
+  const idx = now.getDay()
+  // 先判断今天
+  const todayKey = days[idx]
+  const todayHours = storeHours[todayKey]
+  if (todayHours) {
+    const [openH, openM] = todayHours.open.split(':').map(Number)
+    const open = new Date(now)
+    open.setHours(openH, openM, 0, 0)
+    if (now < open) {
+      return { day: todayKey, time: todayHours.open }
+    }
+  }
+  // 查找未来7天
   for (let i = 1; i <= 7; i++) {
     const nextIdx = (idx + i) % 7
     const key = days[nextIdx]
