@@ -130,7 +130,7 @@ export default function CompletedOrdersPage() {
         onClose={() => setModalOpen(false)}
       />
       <div className="w-full bg-[#FDC519] flex items-center justify-between px-4 py-4">
-        <div className="flex items-center gap-2">
+        <Link href="/admin" className="flex items-center gap-2">
           <Image src="/egg-logo.png" alt="logo" width={80} height={50} />
           <div className="flex flex-col ml-2">
             <span className="font-extrabold text-lg leading-5 text-black tracking-wide">
@@ -141,7 +141,7 @@ export default function CompletedOrdersPage() {
               & INDIAN CAFE
             </span>
           </div>
-        </div>
+        </Link>
         <Link href="/admin">
           <button className="bg-black rounded-xl w-10 h-10 flex items-center justify-center">
             <svg width="24" height="24" fill="white" viewBox="0 0 24 24">

@@ -183,6 +183,7 @@ function OrderDetailsModal({
 }
 
 export default function AdminPage() {
+  const [menuOpen, setMenuOpen] = useState(false)
   const [tab, setTab] = useState('new')
   const { orders, modalOpen, modalOrder, openModal, closeModal } =
     useOrderStore()
@@ -209,15 +210,33 @@ export default function AdminPage() {
             </span>
           </div>
         </div>
-        <Link href="/admin/completed">
-          <button className="bg-black rounded-xl w-10 h-10 flex items-center justify-center">
+        <div className="relative">
+          <button
+            className="bg-black rounded-xl w-10 h-10 flex items-center justify-center focus:outline-none"
+            onClick={() => setMenuOpen((v) => !v)}>
             <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
               <rect x="4" y="7" width="16" height="2" rx="1" />
               <rect x="4" y="11" width="16" height="2" rx="1" />
               <rect x="4" y="15" width="16" height="2" rx="1" />
             </svg>
           </button>
-        </Link>
+          {menuOpen && (
+            <div className="flex flex-col absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg z-50 border border-gray-200">
+              <Link
+                href="/admin/completed"
+                className="px-4 py-3 border-1 bg-[#333] text-[#FDC519] hover:bg-[#FDC519] hover:text-black rounded-t-xl font-bold transition"
+                onClick={() => setMenuOpen(false)}>
+                Completed
+              </Link>
+              <Link
+                href="/admin/menu"
+                className="px-4 py-3 bg-[#333] text-[#FDC519] hover:bg-[#FDC519] hover:text-black rounded-b-xl font-bold transition"
+                onClick={() => setMenuOpen(false)}>
+                Menu
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
       {/* Tabs */}
       <div className="w-full max-w-[400px] px-4 mt-4">

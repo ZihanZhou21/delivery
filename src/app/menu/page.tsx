@@ -6,6 +6,7 @@ import StoreInfo from '../components/StoreInfo'
 import Link from 'next/link'
 import { useCartStore, CartState, CartItem } from '../store/cartStore'
 import StoreNotice from '../components/StoreNotice'
+import { useMenuStore, MenuItem as MenuStoreItem } from '../store/menuStore'
 
 type MenuItem = {
   name: string
@@ -15,63 +16,8 @@ type MenuItem = {
   qty?: number
   note?: string
   id?: number
+  isOutOfStock?: boolean
 }
-
-const menuData = [
-  {
-    category: 'Appetizers',
-    items: [
-      {
-        name: 'Crispy Calamari',
-        desc: 'Lightly battered calamari served with lemon aioli',
-        price: 12.99,
-        img: '/menu/calamari.png',
-      },
-      {
-        name: 'Bruschetta',
-        desc: 'Grilled bread topped with tomatoes, garlic, basil and olive oil',
-        price: 8.99,
-        img: '/menu/bruschetta.png',
-      },
-      {
-        name: 'Spinach & Artichoke Dip',
-        desc: 'Creamy dip served with tortilla chips',
-        price: 10.99,
-        img: '/menu/spinach.png',
-      },
-      {
-        name: 'Stuffed Eggs',
-        desc: 'Egg nest, purple eggs and eggs with avocado',
-        price: 11.99,
-        img: '/menu/stuffed-eggs.png',
-      },
-      {
-        name: 'Egg and Bacon Canapés',
-        desc: 'Bacon and eggs by making these easy and elegant canapés',
-        price: 9.99,
-        img: '/menu/egg-bacon.png',
-      },
-    ],
-  },
-  {
-    category: 'Main Courses',
-    items: [
-      {
-        name: 'Egg Bacon Cheese...',
-        desc: 'Crispy bacon, Gooey egg, Beer Soaked-Onions and American cheese',
-        price: 12.99,
-        img: '/menu/egg-bacon-cheese.png',
-      },
-      {
-        name: 'Creamy Bacon & Egg...',
-        desc: 'Spaghetti dish is a delicious, carb-filled way to start any morning',
-        price: 8.99,
-        img: '/menu/bruschetta.png',
-      },
-    ],
-  },
-  // More categories can be added
-]
 
 export default function AppMenu() {
   const [selectedCategory, setSelectedCategory] = useState('Appetizers')
@@ -81,7 +27,6 @@ export default function AppMenu() {
   const [recentItem, setRecentItem] = useState<MenuItem | null>(null)
   const [showClosedTip, setShowClosedTip] = useState(false)
   const [showNotice, setShowNotice] = useState(false)
-  const categories = menuData.map((c) => c.category)
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({})
   const addToCart = useCartStore((state: CartState) => state.addToCart)
   const cart = useCartStore((state: CartState) => state.cart)
@@ -89,6 +34,29 @@ export default function AppMenu() {
   const removeFromCart = useCartStore(
     (state: CartState) => state.removeFromCart
   )
+
+  // 从 menuStore 获取菜单数据
+  const menuItems = useMenuStore((state) => state.menuItems)
+
+  // 根据分类整理菜单数据
+  const menuData = React.useMemo(() => {
+    const categories: { [key: string]: MenuStoreItem[] } = {}
+
+    menuItems.forEach((item) => {
+      const category = item.category || 'Other'
+      if (!categories[category]) {
+        categories[category] = []
+      }
+      categories[category].push(item)
+    })
+
+    return Object.keys(categories).map((category) => ({
+      category,
+      items: categories[category],
+    }))
+  }, [menuItems])
+
+  const categories = menuData.map((c) => c.category)
 
   const handleSelect = (cat: string) => {
     setSelectedCategory(cat)
@@ -107,6 +75,12 @@ export default function AppMenu() {
       setTimeout(() => setShowClosedTip(false), 2500)
       return
     }
+
+    // 如果菜品缺货，不打开模态框
+    if (item.isOutOfStock) {
+      return
+    }
+
     setModalItem(item)
     setModalQty(1)
     setModalNote('')
@@ -120,7 +94,7 @@ export default function AppMenu() {
       ...modalItem,
       qty: modalQty,
       note: modalNote,
-      id: Date.now() + Math.random(),
+      id: typeof modalItem.id === 'number' ? modalItem.id : Date.now(),
       price: modalItem.price,
       name: modalItem.name,
       img: modalItem.img,
@@ -181,41 +155,66 @@ export default function AppMenu() {
                 {cat.category}
               </div>
               <div className="flex flex-col gap-4">
-                {cat.items.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex bg-white rounded-2xl p-2 gap-4 shadow-md h-30">
-                    <div className="w-25 rounded-xl overflow-hidden flex-shrink-0 h-full">
-                      <Image
-                        src={item.img}
-                        alt={item.name}
-                        width={100}
-                        height={100}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div className="">
-                        <div className="font-bold text-xl text-black truncate">
-                          {item.name}
+                {cat.items.map((item) => {
+                  // 转换store菜单项到当前组件的菜单项格式
+                  const menuItem: MenuItem = {
+                    name: item.name,
+                    desc: item.desc || '',
+                    price: item.price,
+                    img: item.image || '/menu/default.png',
+                    id: Date.now() + Math.random(), // 生成数字类型的id
+                    isOutOfStock: item.isOutOfStock,
+                  }
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex bg-white rounded-2xl p-2 gap-4 shadow-md h-30 relative">
+                      <div className="w-25 rounded-xl overflow-hidden flex-shrink-0 h-full">
+                        <Image
+                          src={menuItem.img}
+                          alt={menuItem.name}
+                          width={100}
+                          height={100}
+                          className={`object-cover w-full h-full ${
+                            item.isOutOfStock ? 'opacity-50' : ''
+                          }`}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div className="">
+                          <div className="font-bold text-xl text-black truncate">
+                            {menuItem.name}
+                          </div>
+                          <div className="text-gray-700 text-sm line-clamp-2">
+                            {menuItem.desc}
+                          </div>
                         </div>
-                        <div className="text-gray-700 text-sm line-clamp-2">
-                          {item.desc}
+                        <div className="flex items-center justify-between mt-1">
+                          <div className="text-[#E53935] font-extrabold text-2xl">
+                            ${menuItem.price.toFixed(2)}
+                          </div>
+                          <button
+                            className={`${
+                              item.isOutOfStock
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-black hover:bg-gray-800'
+                            } text-white rounded-full px-6 py-1 font-semibold ml-2`}
+                            onClick={() => openModal(menuItem)}
+                            disabled={item.isOutOfStock}>
+                            Add
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="text-[#E53935] font-extrabold text-2xl">
-                          ${item.price.toFixed(2)}
+
+                      {item.isOutOfStock && (
+                        <div className="absolute top-2 right-2 bg-[#E53935] text-white text-xs font-bold px-2 py-1 rounded">
+                          Out of Stock
                         </div>
-                        <button
-                          className="bg-black text-white rounded-full px-6 py-1 font-semibold ml-2"
-                          onClick={() => openModal(item)}>
-                          Add
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           ))}
