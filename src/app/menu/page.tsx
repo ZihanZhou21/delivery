@@ -31,8 +31,8 @@ export default function AppMenu() {
   const addToCart = useCartStore((state: CartState) => state.addToCart)
   const cart = useCartStore((state: CartState) => state.cart)
   const safeCart = Array.isArray(cart) ? cart : []
-  const removeFromCart = useCartStore(
-    (state: CartState) => state.removeFromCart
+  const removeFromCartByName = useCartStore(
+    (state: CartState) => state.removeFromCartByName
   )
 
   // 从 menuStore 获取菜单数据
@@ -105,8 +105,8 @@ export default function AppMenu() {
   }
   // Remove recently added item
   const handleRemoveRecent = () => {
-    if (recentItem && recentItem.id !== undefined) {
-      removeFromCart(recentItem.id)
+    if (recentItem && recentItem.name) {
+      removeFromCartByName(recentItem.name)
     }
     setRecentItem(null)
   }

@@ -12,10 +12,14 @@ import StoreNotice from '../components/StoreNotice'
 export default function CartPage() {
   const cart = useCartStore((state: CartState) => state.cart)
   const safeCart = Array.isArray(cart) ? cart : []
-  const updateQty = useCartStore((state: CartState) => state.updateQty)
-  const updateNote = useCartStore((state: CartState) => state.updateNote)
-  const removeFromCart = useCartStore(
-    (state: CartState) => state.removeFromCart
+  const updateQtyByName = useCartStore(
+    (state: CartState) => state.updateQtyByName
+  )
+  const updateNoteByName = useCartStore(
+    (state: CartState) => state.updateNoteByName
+  )
+  const removeFromCartByName = useCartStore(
+    (state: CartState) => state.removeFromCartByName
   )
 
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
@@ -57,10 +61,10 @@ export default function CartPage() {
   const handleApplyChanges = () => {
     if (!editingItem) return
     if (editQty === 0) {
-      removeFromCart(editingItem.id)
+      removeFromCartByName(editingItem.name)
     } else {
-      updateQty(editingItem.id, editQty)
-      updateNote(editingItem.id, editNote)
+      updateQtyByName(editingItem.name, editQty)
+      updateNoteByName(editingItem.name, editNote)
     }
     setEditingItem(null)
   }

@@ -217,16 +217,22 @@ export default function AdminPage() {
             <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
               <rect x="4" y="7" width="16" height="2" rx="1" />
               <rect x="4" y="11" width="16" height="2" rx="1" />
-              <rect x="4" y="15" width="16" height="2" rx="1" />
+              <rect x="10" y="15" width="10" height="2" rx="1" />
             </svg>
           </button>
           {menuOpen && (
             <div className="flex flex-col absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg z-50 border border-gray-200">
               <Link
                 href="/admin/completed"
-                className="px-4 py-3 border-1 bg-[#333] text-[#FDC519] hover:bg-[#FDC519] hover:text-black rounded-t-xl font-bold transition"
+                className="px-4 py-3 bg-[#333] text-[#FDC519] hover:bg-[#FDC519] hover:text-black rounded-t-xl font-bold transition"
                 onClick={() => setMenuOpen(false)}>
                 Completed
+              </Link>
+              <Link
+                href="/admin/storetime"
+                className="px-4 py-3 bg-[#333] border-1 text-[#FDC519] hover:bg-[#FDC519] hover:text-black font-bold transition"
+                onClick={() => setMenuOpen(false)}>
+                Store Time
               </Link>
               <Link
                 href="/admin/menu"

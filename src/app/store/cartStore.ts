@@ -20,8 +20,11 @@ export type CartState = {
   setOrderNote: (note: string) => void
   addToCart: (item: CartItem) => void
   removeFromCart: (id: number) => void
+  removeFromCartByName: (name: string) => void
   updateQty: (id: number, qty: number) => void
+  updateQtyByName: (name: string, qty: number) => void
   updateNote: (id: number, note: string) => void
+  updateNoteByName: (name: string, note: string) => void
   clearCart: () => void
   setCart: (cart: CartItem[]) => void
 }
@@ -38,11 +41,11 @@ export const useCartStore = create<CartState>()(
       setOrderNote: (note) => set({ orderNote: note }),
       addToCart: (item) => {
         const currentCart = Array.isArray(get().cart) ? get().cart : []
-        const exists = currentCart.find((i) => i.id === item.id)
+        const exists = currentCart.find((i) => i.name === item.name)
         if (exists) {
           set({
             cart: currentCart.map((i) =>
-              i.id === item.id ? { ...i, qty: i.qty + item.qty } : i
+              i.name === item.name ? { ...i, qty: i.qty + item.qty } : i
             ),
           })
         } else {
@@ -55,16 +58,34 @@ export const useCartStore = create<CartState>()(
             (i) => i.id !== id
           ),
         }),
+      removeFromCartByName: (name) =>
+        set({
+          cart: (Array.isArray(get().cart) ? get().cart : []).filter(
+            (i) => i.name !== name
+          ),
+        }),
       updateQty: (id, qty) =>
         set({
           cart: (Array.isArray(get().cart) ? get().cart : []).map((i) =>
             i.id === id ? { ...i, qty } : i
           ),
         }),
+      updateQtyByName: (name, qty) =>
+        set({
+          cart: (Array.isArray(get().cart) ? get().cart : []).map((i) =>
+            i.name === name ? { ...i, qty } : i
+          ),
+        }),
       updateNote: (id, note) =>
         set({
           cart: (Array.isArray(get().cart) ? get().cart : []).map((i) =>
             i.id === id ? { ...i, note } : i
+          ),
+        }),
+      updateNoteByName: (name, note) =>
+        set({
+          cart: (Array.isArray(get().cart) ? get().cart : []).map((i) =>
+            i.name === name ? { ...i, note } : i
           ),
         }),
       clearCart: () => set({ cart: [] }),
