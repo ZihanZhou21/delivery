@@ -142,7 +142,7 @@ export default function AppMenu() {
 
           {/* Loading indicator */}
           {isLoading && (
-            <div className="text-center py-4 text-white">加载菜单中...</div>
+            <div className="text-center py-4 text-white">Loading menu...</div>
           )}
 
           {/* Category selection */}
