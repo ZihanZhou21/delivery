@@ -47,33 +47,37 @@ function hasOverlappingIntervals(intervals: TimeInterval[]): boolean {
 // --- Component ---
 
 export default function StoreTimePage() {
-  const hoursFromStore = useStoreTime((state) => state.hours)
-  const setStoreTime = useStoreTime((state) => state.setStoreTime)
+  // 从store中获取数据和方法
+  const {
+    hours: hoursFromStore,
+    isLoading,
+    error: apiError,
+    fetchStoreHours,
+    updateStoreHours,
+    updateDayHours,
+  } = useStoreTime()
 
-  // Initialize local state with a deep copy from the store
-  const [localHours, setLocalHours] = useState<StoreTimeDay[]>(() =>
-    JSON.parse(JSON.stringify(useStoreTime.getState().hours))
-  )
+  // 本地状态
+  const [localHours, setLocalHours] = useState<StoreTimeDay[]>([])
   const [saved, setSaved] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [hasMounted, setHasMounted] = useState(false) // Track client mount
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [hasMounted, setHasMounted] = useState(false) // 客户端挂载追踪
+  const [loadingPerDay, setLoadingPerDay] = useState<Record<string, boolean>>(
+    {}
+  )
 
-  // Set mounted state after initial render
+  // 组件挂载后加载数据
   useEffect(() => {
     setHasMounted(true)
-  }, [])
+    fetchStoreHours()
+  }, [fetchStoreHours])
 
-  // Sync store changes to local state after mount
+  // 当store中的数据更新时，同步到本地状态
   useEffect(() => {
-    if (hasMounted) {
-      // Use deep comparison to check if store state actually changed
-      if (JSON.stringify(localHours) !== JSON.stringify(hoursFromStore)) {
-        console.log('Syncing store state to local state') // Debug log
-        setLocalHours(JSON.parse(JSON.stringify(hoursFromStore)))
-      }
+    if (hasMounted && hoursFromStore && hoursFromStore.length > 0) {
+      setLocalHours(JSON.parse(JSON.stringify(hoursFromStore)))
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hoursFromStore, hasMounted]) // Keep localHours out of deps to avoid loops on edit
+  }, [hoursFromStore, hasMounted])
 
   const dayAbbr = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -86,14 +90,14 @@ export default function StoreTimePage() {
     value: string
   ) {
     const cleanedValue = value.replace(/[^\d:]/g, '').slice(0, 5)
-    // Create deep copies to avoid state mutation issues
+    // 创建深拷贝避免状态突变问题
     const updatedHours = JSON.parse(JSON.stringify(localHours))
 
     if (updatedHours[dayIndex]?.intervals?.[intervalIndex]) {
       updatedHours[dayIndex].intervals[intervalIndex][field] = cleanedValue
       setLocalHours(updatedHours)
-      setSaved(false) // Mark as unsaved
-      setError(null) // Clear error on modification, re-validate on save
+      setSaved(false) // 标记为未保存
+      setValidationError(null) // 修改时清除错误，保存时重新验证
     } else {
       console.error('Attempted to update non-existent interval:', {
         dayIndex,
@@ -108,18 +112,18 @@ export default function StoreTimePage() {
       i === dayIndex ? { ...day, closed: isChecked } : day
     )
     setLocalHours(updatedHours)
-    // Clear potential errors for the day if marking as closed
-    if (isChecked && error?.includes(dayAbbr[dayIndex])) {
-      setError(null)
+    // 如果标记为关闭，清除该天可能的错误
+    if (isChecked && validationError?.includes(dayAbbr[dayIndex])) {
+      setValidationError(null)
     }
     setSaved(false)
   }
 
   function addInterval(dayIndex: number) {
-    // Create deep copies
+    // 创建深拷贝
     const updatedHours = JSON.parse(JSON.stringify(localHours))
     if (updatedHours[dayIndex]) {
-      // Add a new empty interval object
+      // 添加新的空时间间隔
       updatedHours[dayIndex].intervals.push({ open: '', close: '' })
       setLocalHours(updatedHours)
       setSaved(false)
@@ -127,10 +131,10 @@ export default function StoreTimePage() {
   }
 
   function removeInterval(dayIndex: number, intervalIndex: number) {
-    // Create deep copies
+    // 创建深拷贝
     const updatedHours = JSON.parse(JSON.stringify(localHours))
     if (updatedHours[dayIndex]?.intervals) {
-      // Filter out the interval at the specified index
+      // 过滤掉指定索引的时间间隔
       updatedHours[dayIndex].intervals = updatedHours[
         dayIndex
       ].intervals.filter(
@@ -138,82 +142,132 @@ export default function StoreTimePage() {
       )
       setLocalHours(updatedHours)
       setSaved(false)
-      // Clear error if it was related to this day
-      if (error?.includes(dayAbbr[dayIndex])) {
-        setError(null) // Re-validate on next save
+      // 如果错误与此天相关，则清除错误
+      if (validationError?.includes(dayAbbr[dayIndex])) {
+        setValidationError(null) // 下次保存时重新验证
       }
     }
   }
 
-  // --- Save Handler with Validation ---
-  const handleSave = (e?: React.FormEvent) => {
+  // --- 验证并保存所有营业时间 ---
+  const handleSaveAll = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    setError(null) // Clear previous errors
-    let isValid = true
+    setValidationError(null) // 清除之前的错误
 
-    for (let i = 0; i < localHours.length; i++) {
-      const day = localHours[i]
-      const dayName = dayAbbr[i] // Get day name for error messages
-
-      if (day.closed) continue // Skip validation if the whole day is closed
-
-      // Check if there are intervals if the day isn't closed
-      if (!day.intervals || day.intervals.length === 0) {
-        // Decide if this is an error or allowed. Assuming allowed for now.
-        // If required:
-        // setError(`At least one time interval is required for ${dayName} if not marked Closed.`);
-        // isValid = false;
-        // break;
-        continue
-      }
-
-      // Validate each interval for the day
-      for (let j = 0; j < day.intervals.length; j++) {
-        const interval = day.intervals[j]
-        const intervalNum = j + 1 // For user-friendly error messages
-
-        if (!isValidTimeFormat(interval.open)) {
-          setError(
-            `Invalid open time format for ${dayName} (Interval ${intervalNum}). Use HH:MM.`
-          )
-          isValid = false
-          break // Stop checking intervals for this day
-        }
-        if (!isValidTimeFormat(interval.close)) {
-          setError(
-            `Invalid close time format for ${dayName} (Interval ${intervalNum}). Use HH:MM.`
-          )
-          isValid = false
-          break
-        }
-        if (!isStartBeforeEnd(interval.open, interval.close)) {
-          setError(
-            `Open time (${interval.open}) must be before close time (${interval.close}) for ${dayName} (Interval ${intervalNum}).`
-          )
-          isValid = false
-          break
-        }
-      }
-      if (!isValid) break // Stop checking other days if an error was found
-
-      // Check for overlaps *within* the current day's intervals
-      if (hasOverlappingIntervals(day.intervals)) {
-        setError(`Time intervals overlap for ${dayName}. Please correct.`)
-        isValid = false
-        break // Stop checking other days
-      }
+    const validationResult = validateHours(localHours)
+    if (!validationResult.isValid) {
+      setValidationError(validationResult.error)
+      return
     }
 
-    // If all validations pass, save the current local state to Zustand
-    if (isValid) {
-      console.log('Saving valid hours:', JSON.stringify(localHours)) // Debug log
-      setStoreTime(JSON.parse(JSON.stringify(localHours))) // Save a deep copy
+    // 如果所有验证通过，保存当前本地状态到API
+    try {
+      await updateStoreHours(JSON.parse(JSON.stringify(localHours)))
       setSaved(true)
-      setTimeout(() => setSaved(false), 3000) // Hide "Saved!" message
+      setTimeout(() => setSaved(false), 3000) // 3秒后隐藏"已保存！"消息
+    } catch (error) {
+      console.error('Error saving hours:', error)
+      setValidationError('Failed to save hours. Please try again.')
     }
   }
 
-  // --- Render Logic ---
+  // --- 单天营业时间更新 ---
+  const handleSaveDay = async (dayIndex: number) => {
+    setValidationError(null)
+    const day = localHours[dayIndex]
+    const dayName = day.day
+
+    // 验证单天的时间间隔
+    const validationResult = validateSingleDay(day, dayAbbr[dayIndex])
+    if (!validationResult.isValid) {
+      setValidationError(validationResult.error)
+      return
+    }
+
+    // 设置该天为加载状态
+    setLoadingPerDay((prev) => ({ ...prev, [dayName]: true }))
+
+    // 调用API更新单天
+    try {
+      await updateDayHours(dayName, day.intervals, day.closed)
+      // 显示临时成功消息
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (error) {
+      console.error(`Error saving ${dayName} hours:`, error)
+      setValidationError(`Failed to save ${dayName} hours. Please try again.`)
+    } finally {
+      setLoadingPerDay((prev) => ({ ...prev, [dayName]: false }))
+    }
+  }
+
+  // --- 验证所有营业时间的辅助函数 ---
+  function validateHours(hours: StoreTimeDay[]) {
+    let isValid = true
+    let errorMessage = null
+
+    for (let i = 0; i < hours.length; i++) {
+      const day = hours[i]
+      const dayName = dayAbbr[i] // 获取日期名用于错误消息
+
+      const result = validateSingleDay(day, dayName)
+      if (!result.isValid) {
+        isValid = false
+        errorMessage = result.error
+        break
+      }
+    }
+
+    return { isValid, error: errorMessage }
+  }
+
+  // --- 验证单天营业时间的辅助函数 ---
+  function validateSingleDay(day: StoreTimeDay, dayName: string) {
+    if (day.closed) return { isValid: true, error: null }
+
+    // 检查是否有时间间隔（如果天未关闭）
+    if (!day.intervals || day.intervals.length === 0) {
+      // 决定是否这是一个错误。目前假设允许
+      return { isValid: true, error: null }
+    }
+
+    // 验证该天的每个时间间隔
+    for (let j = 0; j < day.intervals.length; j++) {
+      const interval = day.intervals[j]
+      const intervalNum = j + 1 // 对用户友好的错误消息
+
+      if (!isValidTimeFormat(interval.open)) {
+        return {
+          isValid: false,
+          error: `${dayName} (间隔 ${intervalNum})的开始时间格式无效。请使用 HH:MM.`,
+        }
+      }
+      if (!isValidTimeFormat(interval.close)) {
+        return {
+          isValid: false,
+          error: `${dayName} (间隔 ${intervalNum})的结束时间格式无效。请使用 HH:MM.`,
+        }
+      }
+      if (!isStartBeforeEnd(interval.open, interval.close)) {
+        return {
+          isValid: false,
+          error: `${dayName} (间隔 ${intervalNum})的开始时间(${interval.open})必须早于结束时间(${interval.close}).`,
+        }
+      }
+    }
+
+    // 检查当前天的时间间隔内是否有重叠
+    if (hasOverlappingIntervals(day.intervals)) {
+      return {
+        isValid: false,
+        error: `${dayName}的时间间隔有重叠。请更正。`,
+      }
+    }
+
+    return { isValid: true, error: null }
+  }
+
+  // --- 渲染逻辑 ---
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#363636] w-[400px] mx-auto ">
       <div className="w-[400px] bg-black rounded-2xl shadow-2xl p-8 flex flex-col items-center">
@@ -249,57 +303,76 @@ export default function StoreTimePage() {
         <h2 className="text-2xl font-extrabold text-[#FDC519] mb-6">
           Store Opening Hours
         </h2>
-        {/* Show Skeleton Loader until client has mounted */}
-        {!hasMounted ? (
-          <div className="w-full flex flex-col gap-4">
-            {/* Simple skeleton, adjust if needed */}
-            {[...Array(7)].map((_, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between gap-2 h-10 animate-pulse mb-3 p-3 border border-gray-700 rounded-lg">
-                <span className="bg-gray-700 rounded w-16 h-6"></span>
-                <div className="flex-1 flex justify-end">
-                  {' '}
-                  <span className="bg-gray-700 rounded w-28 h-6"></span>
-                </div>
-              </div>
-            ))}
-            <div className="mt-4 w-full bg-gray-700 rounded-xl py-3 h-12 animate-pulse"></div>
+
+        {/* 加载状态 */}
+        {isLoading && !localHours.length && (
+          <div className="w-full text-center mb-4 text-white py-2">
+            Loading store hours...
           </div>
-        ) : (
-          // Render the actual form after client mount
-          <form className="w-full flex flex-col" onSubmit={handleSave}>
-            {/* Map through each day */}
-            {localHours.map((day, dayIndex) => (
+        )}
+
+        {/* API错误显示 */}
+        {apiError && (
+          <div className="w-full text-center mb-4 text-red-500 py-2 rounded-lg">
+            Error: {apiError}
+          </div>
+        )}
+
+        {/* 验证错误显示 */}
+        {validationError && (
+          <div className="w-full text-center mb-4 text-red-500 py-2 bg-red-500/20 rounded-lg">
+            {validationError}
+          </div>
+        )}
+
+        {/* 保存成功消息 */}
+        {saved && (
+          <div className="w-full flex justify-center my-2">
+            <div className="bg-green-500 text-white px-4 py-2 rounded-lg">
+              Changes saved!
+            </div>
+          </div>
+        )}
+
+        <form className="w-full" onSubmit={handleSaveAll}>
+          {/* Days of the week */}
+          {!isLoading &&
+            localHours.map((day, dayIndex) => (
               <div
-                key={day.day || dayIndex}
-                className="mb-3 p-3 border border-gray-600 rounded-lg">
-                {/* Day Label and Closed Checkbox */}
+                key={day.day}
+                className="bg-[#222] rounded-xl p-4 mb-4 border border-gray-700">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-white font-bold w-16">
-                    {dayAbbr[dayIndex]}
-                  </span>
-                  <label className="flex items-center text-white text-sm font-bold cursor-pointer">
+                  <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={!!day.closed}
+                      checked={day.closed || false}
                       onChange={(e) =>
                         handleCheckboxChange(dayIndex, e.target.checked)
                       }
-                      className="mr-2 h-4 w-4 accent-[#FDC519]"
+                      className="w-4 h-4 accent-[#FDC519]"
                     />
-                    Closed All Day
+                    <span className="text-white font-bold">
+                      {day.day}: {day.closed ? 'Closed' : 'Open'}
+                    </span>
                   </label>
+
+                  {/* 单天保存按钮 */}
+                  <button
+                    type="button"
+                    className="text-sm bg-[#FDC519] text-black px-2 py-1 rounded-lg hover:bg-yellow-400 disabled:opacity-50"
+                    onClick={() => handleSaveDay(dayIndex)}
+                    disabled={loadingPerDay[day.day]}>
+                    {loadingPerDay[day.day] ? 'Saving...' : 'Save Day'}
+                  </button>
                 </div>
 
-                {/* Render intervals only if the day is not marked as closed */}
+                {/* Time intervals for the day - hide if closed */}
                 {!day.closed && (
-                  <div className="flex flex-col gap-2">
+                  <div className="ml-6">
                     {day.intervals.map((interval, intervalIndex) => (
                       <div
-                        key={intervalIndex}
-                        className="flex items-center  gap-2">
-                        {/* Open Time Input */}
+                        key={`${day.day}-interval-${intervalIndex}`}
+                        className="flex items-center gap-2 mb-2">
                         <input
                           type="text"
                           value={interval.open}
@@ -312,23 +385,9 @@ export default function StoreTimePage() {
                             )
                           }
                           placeholder="HH:MM"
-                          maxLength={5}
-                          // Improved error highlighting check
-                          className={`flex w-24 bg-[#222] text-white rounded-lg px-2 py-1 border ${
-                            error &&
-                            error.includes(
-                              `${dayAbbr[dayIndex]} (Interval ${
-                                intervalIndex + 1
-                              })`
-                            ) &&
-                            (error.includes('open time') ||
-                              error.includes('overlap'))
-                              ? 'border-red-500'
-                              : 'border-[#FDC519]'
-                          } focus:outline-none focus:border-yellow-300 text-center`}
+                          className="bg-black text-white border border-gray-600 rounded-lg p-2 w-20 focus:border-[#FDC519] focus:outline-none"
                         />
-                        <span className="text-gray-400">-</span>
-                        {/* Close Time Input */}
+                        <span className="text-white">to</span>
                         <input
                           type="text"
                           value={interval.close}
@@ -341,73 +400,50 @@ export default function StoreTimePage() {
                             )
                           }
                           placeholder="HH:MM"
-                          maxLength={5}
-                          // Improved error highlighting check
-                          className={`flex w-24 bg-[#222] text-white rounded-lg px-2 py-1 border ${
-                            error &&
-                            error.includes(
-                              `${dayAbbr[dayIndex]} (Interval ${
-                                intervalIndex + 1
-                              })`
-                            ) &&
-                            (error.includes('close time') ||
-                              error.includes('overlap'))
-                              ? 'border-red-500'
-                              : 'border-[#FDC519]'
-                          } focus:outline-none focus:border-yellow-300 text-center`}
+                          className="bg-black text-white border border-gray-600 rounded-lg p-2 w-20 focus:border-[#FDC519] focus:outline-none"
                         />
-                        {/* Remove Interval Button */}
-                        {/* Show remove button only if more than one interval exists */}
-                        {day.intervals.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeInterval(dayIndex, intervalIndex)
-                            }
-                            className="text-red-500 hover:text-red-400 text-2xl font-bold ml-1 px-1 flex-shrink-0"
-                            aria-label="Remove time interval">
-                            &times; {/* Cross symbol */}
-                          </button>
-                        )}
-                        {/* Add placeholder if only one interval to maintain alignment */}
-                        {day.intervals.length <= 1 && (
-                          <div className="w-6 ml-1 px-1 flex-shrink-0"></div> // Placeholder
-                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            removeInterval(dayIndex, intervalIndex)
+                          }
+                          className="bg-red-600 text-white p-1 rounded-lg hover:bg-red-700">
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                              d="M18 6L6 18M6 6l12 12"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
                       </div>
                     ))}
-
-                    {/* Add Interval Button */}
                     <button
                       type="button"
                       onClick={() => addInterval(dayIndex)}
-                      className="text-[#FDC519] hover:text-yellow-300 text-sm font-semibold mt-2 self-start">
-                      + Add Time Slot
+                      className="mt-2 bg-[#444] text-white px-3 py-1 rounded-lg hover:bg-[#555] text-sm">
+                      + Add Time Interval
                     </button>
                   </div>
                 )}
               </div>
             ))}
 
-            {/* Save Button */}
-            <button
-              className="mt-4 w-full bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition disabled:opacity-50"
-              type="submit"
-              disabled={!!error} // Disable save if there's an error
-            >
-              Save
-            </button>
-          </form>
-        )}
-
-        {/* Feedback Messages - Render only after mount */}
-        {hasMounted && saved && (
-          <div className="text-green-400 font-bold mt-4">Saved!</div>
-        )}
-        {hasMounted && error && (
-          <div className="text-red-400 font-bold mt-4 break-words w-full text-center">
-            {error}
-          </div>
-        )}
+          {/* Save/Submit button */}
+          <button
+            type="submit"
+            className="w-full bg-[#FDC519] text-black font-bold py-3 rounded-xl mt-2 hover:bg-yellow-400 disabled:opacity-50"
+            disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save All Hours'}
+          </button>
+        </form>
       </div>
     </div>
   )

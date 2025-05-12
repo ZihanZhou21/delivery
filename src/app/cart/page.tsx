@@ -12,14 +12,10 @@ import StoreNotice from '../components/StoreNotice'
 export default function CartPage() {
   const cart = useCartStore((state: CartState) => state.cart)
   const safeCart = Array.isArray(cart) ? cart : []
-  const updateQtyByName = useCartStore(
-    (state: CartState) => state.updateQtyByName
-  )
-  const updateNoteByName = useCartStore(
-    (state: CartState) => state.updateNoteByName
-  )
-  const removeFromCartByName = useCartStore(
-    (state: CartState) => state.removeFromCartByName
+  const updateQty = useCartStore((state: CartState) => state.updateQty)
+  const updateNote = useCartStore((state: CartState) => state.updateNote)
+  const removeFromCart = useCartStore(
+    (state: CartState) => state.removeFromCart
   )
 
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>(
@@ -61,12 +57,17 @@ export default function CartPage() {
   const handleApplyChanges = () => {
     if (!editingItem) return
     if (editQty === 0) {
-      removeFromCartByName(editingItem.name)
+      removeFromCart(editingItem.id)
     } else {
-      updateQtyByName(editingItem.name, editQty)
-      updateNoteByName(editingItem.name, editNote)
+      updateQty(editingItem.id, editQty)
+      updateNote(editingItem.id, editNote)
     }
     setEditingItem(null)
+  }
+
+  const handleDeliverySelect = (type: 'delivery' | 'pickup') => {
+    setDeliveryType(type)
+    localStorage.setItem('deliveryType', type)
   }
 
   return (
@@ -273,7 +274,7 @@ export default function CartPage() {
                     ? 'bg-[#FDC519] border-[#FDC519]'
                     : 'border-white'
                 }`}
-                onClick={() => setDeliveryType('delivery')}>
+                onClick={() => handleDeliverySelect('delivery')}>
                 {deliveryType === 'delivery' && (
                   <span className="w-3 h-3 bg-white rounded-full block"></span>
                 )}
@@ -297,7 +298,7 @@ export default function CartPage() {
                     ? 'bg-[#FDC519] border-[#FDC519]'
                     : 'border-white'
                 }`}
-                onClick={() => setDeliveryType('pickup')}>
+                onClick={() => handleDeliverySelect('pickup')}>
                 {deliveryType === 'pickup' && (
                   <span className="w-3 h-3 bg-white rounded-full block"></span>
                 )}

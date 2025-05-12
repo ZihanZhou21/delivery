@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  output: 'export',
+  // 移除 output: 'export'，因为它会阻止API路由工作
   // basePath: '/delivery',
   // assetPrefix: '/delivery/',
 }

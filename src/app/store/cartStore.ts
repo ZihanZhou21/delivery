@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 export type CartItem = {
-  id: number
+  id: string
   name: string
   price: number
   qty: number
@@ -19,11 +19,11 @@ export type CartState = {
   setFinalPrice: (price: number) => void
   setOrderNote: (note: string) => void
   addToCart: (item: CartItem) => void
-  removeFromCart: (id: number) => void
+  removeFromCart: (id: string) => void
   removeFromCartByName: (name: string) => void
-  updateQty: (id: number, qty: number) => void
+  updateQty: (id: string, qty: number) => void
   updateQtyByName: (name: string, qty: number) => void
-  updateNote: (id: number, note: string) => void
+  updateNote: (id: string, note: string) => void
   updateNoteByName: (name: string, note: string) => void
   clearCart: () => void
   setCart: (cart: CartItem[]) => void
@@ -41,11 +41,11 @@ export const useCartStore = create<CartState>()(
       setOrderNote: (note) => set({ orderNote: note }),
       addToCart: (item) => {
         const currentCart = Array.isArray(get().cart) ? get().cart : []
-        const exists = currentCart.find((i) => i.name === item.name)
+        const exists = currentCart.find((i) => i.id === item.id)
         if (exists) {
           set({
             cart: currentCart.map((i) =>
-              i.name === item.name ? { ...i, qty: i.qty + item.qty } : i
+              i.id === item.id ? { ...i, qty: i.qty + item.qty } : i
             ),
           })
         } else {

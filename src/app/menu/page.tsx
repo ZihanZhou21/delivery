@@ -1,7 +1,7 @@
 'use client'
 import TopBar from '../components/TopBar'
 import Image from 'next/image'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import StoreInfo from '../components/StoreInfo'
 import Link from 'next/link'
 import { useCartStore, CartState, CartItem } from '../store/cartStore'
@@ -15,7 +15,7 @@ type MenuItem = {
   img: string
   qty?: number
   note?: string
-  id?: number
+  id: string
   isOutOfStock?: boolean
 }
 
@@ -35,8 +35,15 @@ export default function AppMenu() {
     (state: CartState) => state.removeFromCartByName
   )
 
-  // 从 menuStore 获取菜单数据
+  // 从 menuStore 获取菜单数据相关功能
   const menuItems = useMenuStore((state) => state.menuItems)
+  const fetchMenuItems = useMenuStore((state) => state.fetchMenuItems)
+  const isLoading = useMenuStore((state) => state.isLoading)
+
+  // 组件加载时获取所有菜单数据
+  useEffect(() => {
+    fetchMenuItems()
+  }, [fetchMenuItems])
 
   // 根据分类整理菜单数据
   const menuData = React.useMemo(() => {
@@ -56,8 +63,10 @@ export default function AppMenu() {
     }))
   }, [menuItems])
 
+  // 获取所有分类名称
   const categories = menuData.map((c) => c.category)
 
+  // 处理分类选择，跳转到相应部分
   const handleSelect = (cat: string) => {
     setSelectedCategory(cat)
     setTimeout(() => {
@@ -94,7 +103,7 @@ export default function AppMenu() {
       ...modalItem,
       qty: modalQty,
       note: modalNote,
-      id: typeof modalItem.id === 'number' ? modalItem.id : Date.now(),
+      id: modalItem.id,
       price: modalItem.price,
       name: modalItem.name,
       img: modalItem.img,
@@ -130,94 +139,104 @@ export default function AppMenu() {
           <div className="text-[#FDC519] text-2xl font-extrabold text-center mt-2 tracking-wide">
             OUR MENU
           </div>
+
+          {/* Loading indicator */}
+          {isLoading && (
+            <div className="text-center py-4 text-white">加载菜单中...</div>
+          )}
+
           {/* Category selection */}
-          <div className="flex justify-center mt-2 mb-4">
-            <select
-              className="text-white bg-transparent border border-[#FDC519] rounded-lg px-6 py-2 text-lg font-semibold focus:outline-none"
-              value={selectedCategory}
-              onChange={(e) => handleSelect(e.target.value)}>
-              {categories.map((cat) => (
-                <option key={cat} value={cat} className="text-black">
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Menu item list */}
-          {menuData.map((cat) => (
-            <div
-              key={cat.category}
-              ref={(el) => {
-                sectionRefs.current[cat.category] = el
-              }}
-              className="mb-6">
-              <div className="text-white text-xl font-bold mb-2">
-                {cat.category}
-              </div>
-              <div className="flex flex-col gap-4">
-                {cat.items.map((item) => {
-                  // 转换store菜单项到当前组件的菜单项格式
-                  const menuItem: MenuItem = {
-                    name: item.name,
-                    desc: item.desc || '',
-                    price: item.price,
-                    img: item.image || '/menu/default.png',
-                    id: Date.now() + Math.random(), // 生成数字类型的id
-                    isOutOfStock: item.isOutOfStock,
-                  }
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex bg-white rounded-2xl p-2 gap-4 shadow-md h-30 relative">
-                      <div className="w-25 rounded-xl overflow-hidden flex-shrink-0 h-full">
-                        <Image
-                          src={menuItem.img}
-                          alt={menuItem.name}
-                          width={100}
-                          height={100}
-                          className={`object-cover w-full h-full ${
-                            item.isOutOfStock ? 'opacity-50' : ''
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col justify-between">
-                        <div className="">
-                          <div className="font-bold text-xl text-black truncate">
-                            {menuItem.name}
-                          </div>
-                          <div className="text-gray-700 text-sm line-clamp-2">
-                            {menuItem.desc}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="text-[#E53935] font-extrabold text-2xl">
-                            ${menuItem.price.toFixed(2)}
-                          </div>
-                          <button
-                            className={`${
-                              item.isOutOfStock
-                                ? 'bg-gray-400 cursor-not-allowed'
-                                : 'bg-black hover:bg-gray-800'
-                            } text-white rounded-full px-6 py-1 font-semibold ml-2`}
-                            onClick={() => openModal(menuItem)}
-                            disabled={item.isOutOfStock}>
-                            Add
-                          </button>
-                        </div>
-                      </div>
-
-                      {item.isOutOfStock && (
-                        <div className="absolute top-2 right-2 bg-[#E53935] text-white text-xs font-bold px-2 py-1 rounded">
-                          Out of Stock
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+          {!isLoading && categories.length > 0 && (
+            <div className="flex justify-center mt-2 mb-4">
+              <select
+                className="text-white bg-transparent border border-[#FDC519] rounded-lg px-6 py-2 text-lg font-semibold focus:outline-none"
+                value={selectedCategory}
+                onChange={(e) => handleSelect(e.target.value)}>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat} className="text-black">
+                    {cat}
+                  </option>
+                ))}
+              </select>
             </div>
-          ))}
+          )}
+
+          {/* Menu item list - 显示所有分类 */}
+          {!isLoading &&
+            menuData.map((cat) => (
+              <div
+                key={cat.category}
+                ref={(el) => {
+                  sectionRefs.current[cat.category] = el
+                }}
+                className="mb-6">
+                <div className="text-white text-xl font-bold mb-2">
+                  {cat.category}
+                </div>
+                <div className="flex flex-col gap-4">
+                  {cat.items.map((item) => {
+                    // 转换store菜单项到当前组件的菜单项格式
+                    const menuItem: MenuItem = {
+                      name: item.name,
+                      desc: item.desc || '',
+                      price: item.price,
+                      img: item.image || '/menu/default.png',
+                      id: item.id,
+                      isOutOfStock: item.isOutOfStock,
+                    }
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex bg-white rounded-2xl p-2 gap-4 shadow-md h-30 relative">
+                        <div className="w-25 rounded-xl overflow-hidden flex-shrink-0 h-full">
+                          <Image
+                            src={menuItem.img}
+                            alt={menuItem.name}
+                            width={100}
+                            height={100}
+                            className={`object-cover w-full h-full ${
+                              item.isOutOfStock ? 'opacity-50' : ''
+                            }`}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 flex flex-col justify-between">
+                          <div className="">
+                            <div className="font-bold text-xl text-black truncate">
+                              {menuItem.name}
+                            </div>
+                            <div className="text-gray-700 text-sm line-clamp-2">
+                              {menuItem.desc}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="text-[#E53935] font-extrabold text-2xl">
+                              ${menuItem.price.toFixed(2)}
+                            </div>
+                            <button
+                              className={`${
+                                item.isOutOfStock
+                                  ? 'bg-gray-400 cursor-not-allowed'
+                                  : 'bg-black hover:bg-gray-800'
+                              } text-white rounded-full px-6 py-1 font-semibold ml-2`}
+                              onClick={() => openModal(menuItem)}
+                              disabled={item.isOutOfStock}>
+                              Add
+                            </button>
+                          </div>
+                        </div>
+
+                        {item.isOutOfStock && (
+                          <div className="absolute top-2 right-2 bg-[#E53935] text-white text-xs font-bold px-2 py-1 rounded">
+                            Out of Stock
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           <StoreInfo />
           {showClosedTip && (
             <div className="fixed bottom-20 max-w-[300px] left-1/2 -translate-x-1/2 z-50 bg-[#E53935] text-white px-6 py-3 mb-4 rounded-xl font-bold text-lg shadow-lg">
@@ -225,6 +244,7 @@ export default function AppMenu() {
             </div>
           )}
         </div>
+
         {/* Modal section */}
         {modalItem && (
           <div className="fixed inset-0 z-50 flex items-end justify-center">

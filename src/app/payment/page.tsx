@@ -1,10 +1,133 @@
 'use client'
 import TopBar from '../components/TopBar'
 import { useCartStore } from '../store/cartStore'
-import React from 'react'
+import { useAddressStore } from '../store/addressStore'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createOrder } from '@/lib/api/orderApi'
+import { createPaymentSession } from '@/lib/api/paymentApi'
+
+// 硬编码的用户信息
+const hardcodedUser = {
+  name: 'Zihan Zhou',
+  phone: '0407 509 869',
+  email: 'zihan@example.com',
+  address: '2/51-53 Stanbel Rd, Salisbury Plain, SA 5109',
+  // 信用卡信息
+  cardName: 'Zihan Zhou',
+  cardNumber: '4111 1111 1111 1111',
+  cardCvv: '123',
+  cardExpiry: '12/25',
+}
 
 export default function PaymentPage() {
+  const router = useRouter()
+  const cart = useCartStore((state) => state.cart)
   const finalPrice = useCartStore((state) => state.finalPrice)
+  const orderNote = useCartStore((state) => state.orderNote)
+  const address = useAddressStore((state) => state.address)
+  const clearCart = useCartStore((state) => state.clearCart)
+
+  // 表单状态
+  const [cardName, setCardName] = useState(hardcodedUser.cardName)
+  const [cardNumber, setCardNumber] = useState(hardcodedUser.cardNumber)
+  const [cardCvv, setCardCvv] = useState(hardcodedUser.cardCvv)
+  const [cardExpiry, setCardExpiry] = useState(hardcodedUser.cardExpiry)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [deliveryType, setDeliveryType] = useState('delivery')
+
+  // 从本地存储获取配送方式
+  useEffect(() => {
+    const storedType = localStorage.getItem('deliveryType')
+    if (storedType === 'pickup' || storedType === 'delivery') {
+      setDeliveryType(storedType)
+    }
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setErrorMessage('')
+
+    try {
+      // 准备订单项
+      const orderItems = cart.map((item) => ({
+        name: item.name,
+        price: item.price,
+        qty: item.qty,
+      }))
+
+      // 使用地址信息和硬编码用户信息
+      const userInfo = {
+        name: hardcodedUser.name,
+        phone: hardcodedUser.phone,
+        email: hardcodedUser.email,
+        address: address || hardcodedUser.address,
+      }
+
+      // 创建订单
+      const newOrder = await createOrder(
+        userInfo,
+        orderItems,
+        deliveryType,
+        orderNote || undefined
+      )
+
+      console.log('order created:', newOrder)
+
+      // 创建支付会话
+      const paymentSession = await createPaymentSession(
+        newOrder.id,
+        finalPrice,
+        'AUD'
+      )
+
+      console.log('created payment session:', paymentSession)
+
+      // 清空购物车
+      clearCart()
+
+      // 模拟支付成功，跳转到成功页面
+      router.push('/payment/success')
+    } catch (error) {
+      console.error('order or payment process error:', error)
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Order or payment process error'
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // 格式化卡号显示
+  const formatCardNumber = (value: string) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
+    const matches = v.match(/\d{4,16}/g)
+    const match = (matches && matches[0]) || ''
+    const parts = []
+
+    for (let i = 0, len = match.length; i < len; i += 4) {
+      parts.push(match.substring(i, i + 4))
+    }
+
+    if (parts.length) {
+      return parts.join(' ')
+    } else {
+      return value
+    }
+  }
+
+  // 格式化过期日期
+  const formatExpiry = (value: string) => {
+    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
+    if (v.length >= 2) {
+      return `${v.substring(0, 2)}/${v.substring(2, 4)}`
+    }
+    return value
+  }
 
   return (
     <div className="min-h-screen bg-white flex flex-col items-center w-full">
@@ -12,25 +135,38 @@ export default function PaymentPage() {
         <TopBar />
         <div className="w-full px-4 py-6 flex flex-col gap-6 flex-1">
           <div className="text-[#FDC519] text-2xl font-extrabold text-center mt-2 tracking-wide mb-4">
-            PAYMENT GATEWAY
+            Payment Information
           </div>
           <div className="flex justify-center">
             <div className="bg-black text-white rounded-xl px-6 py-3 text-xl font-bold">
-              Total Amount: ${finalPrice.toFixed(2)}
+              Final Price: ${finalPrice.toFixed(2)}
             </div>
           </div>
-          <form className="flex flex-col gap-4 mt-4">
+
+          {errorMessage && (
+            <div className="bg-red-500/20 border border-red-500 text-red-500 p-3 rounded-lg text-center">
+              {errorMessage}
+            </div>
+          )}
+
+          <form className="flex flex-col gap-4 mt-4" onSubmit={handleSubmit}>
             <input
               className="w-full rounded-lg p-4 bg-[#333] text-white placeholder:text-gray-400 text-base outline-none"
-              placeholder="Name on card"
+              placeholder="card holder name"
               type="text"
+              value={cardName}
+              onChange={(e) => setCardName(e.target.value)}
+              required
             />
             <input
               className="w-full rounded-lg p-4 bg-[#333] text-white placeholder:text-gray-400 text-base outline-none"
-              placeholder="Card Number"
+              placeholder="card number"
               type="text"
               inputMode="numeric"
               maxLength={19}
+              value={cardNumber}
+              onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+              required
             />
             <div className="flex gap-4">
               <input
@@ -39,51 +175,34 @@ export default function PaymentPage() {
                 type="text"
                 inputMode="numeric"
                 maxLength={3}
+                value={cardCvv}
+                onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ''))}
+                required
               />
               <input
                 className="flex-1 rounded-lg p-4 bg-[#333] text-white placeholder:text-gray-400 text-base outline-none"
-                placeholder="Expiry Date"
+                placeholder="expiry date (MM/YY)"
                 type="text"
                 maxLength={5}
+                value={cardExpiry}
+                onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                required
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-[#FDC519] text-black font-bold text-xl rounded-xl py-3 mt-2 hover:bg-yellow-400 transition">
-              Submit
+              disabled={isSubmitting}
+              className="w-full bg-[#FDC519] text-black font-bold text-xl rounded-xl py-3 mt-2 hover:bg-yellow-400 transition disabled:opacity-50">
+              {isSubmitting ? 'Processing...' : 'Confirm Payment'}
             </button>
           </form>
-          <button className="w-full bg-black text-white font-bold text-xl rounded-xl py-3 flex items-center justify-center gap-2 mt-2">
-            Check Out with
-            <span className="text-2xl"></span> Pay
-          </button>
-          <button className="w-full bg-black text-white font-bold text-xl rounded-xl py-3 flex items-center justify-center gap-2 mt-2">
-            Buy with
-            <span className="text-2xl">
-              <svg width="24" height="24" viewBox="0 0 48 48">
-                <g>
-                  <path
-                    fill="#4285F4"
-                    d="M43.611 20.083H42V20H24v8h11.303C34.889 32.438 29.889 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c2.73 0 5.23.936 7.207 2.482l6.086-6.086C33.527 6.527 28.977 4 24 4 12.954 4 4 12.954 4 24s8.954 20 20 20c11.045 0 20-8.954 20-20 0-1.341-.138-2.651-.389-3.917z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M6.306 14.691l6.571 4.819C14.655 16.104 19.001 13 24 13c2.73 0 5.23.936 7.207 2.482l6.086-6.086C33.527 6.527 28.977 4 24 4c-7.732 0-14.436 4.41-17.694 10.691z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M24 44c5.798 0 11.009-2.221 14.994-5.826l-6.909-5.665C29.89 34.438 26.995 35.5 24 35.5c-5.858 0-10.803-3.721-12.597-8.946l-6.563 5.065C9.538 39.421 16.227 44 24 44z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M43.611 20.083H42V20H24v8h11.303c-1.527 4.438-6.527 8-11.303 8-3.162 0-6.012-1.084-8.207-2.938l-6.909 5.665C9.538 39.421 16.227 44 24 44c7.732 0 14.436-4.41 17.694-10.691z"
-                  />
-                  <path fill="none" d="M0 0h48v48H0z" />
-                </g>
-              </svg>
-            </span>
-            Pay
-          </button>
+          <div className="text-white text-center text-sm mt-4">
+            <p>user information</p>
+            <p>name: {hardcodedUser.name}</p>
+            <p>phone: {hardcodedUser.phone}</p>
+            <p>email: {hardcodedUser.email}</p>
+            <p>address: {address || hardcodedUser.address}</p>
+          </div>
         </div>
       </div>
     </div>

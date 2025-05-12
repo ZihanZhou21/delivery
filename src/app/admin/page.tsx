@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useOrderStore, Order } from '../store/orderStore'
 import Link from 'next/link'
@@ -9,15 +9,39 @@ function OrderDetailsModal({
   order,
   open,
   onClose,
+  refreshCurrentTab,
 }: {
   order: Order | null
   open: boolean
   onClose: () => void
+  refreshCurrentTab: () => void
 }) {
   const setOrderStatus = useOrderStore((state) => state.setOrderStatus)
   const [showCallUber, setShowCallUber] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+
   if (!open || !order) return null
+
   const isDelivery = order.orderType.toLowerCase() === 'delivery'
+
+  // 处理状态更新
+  const handleStatusChange = async (newStatus: 'pending' | 'completed') => {
+    setIsUpdating(true)
+    try {
+      await setOrderStatus(order.id, newStatus)
+      setShowCallUber(false)
+      onClose()
+
+      // 刷新当前标签的数据
+      refreshCurrentTab()
+    } catch (error) {
+      console.error('Failed to update order status:', error)
+      // 可以在这里显示错误消息
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 mx-auto z-50 w-[400px] flex items-end justify-center">
       {/* 黑色半透明蒙版 */}
@@ -111,51 +135,51 @@ function OrderDetailsModal({
           <div className="mb-2">
             <span className="text-white font-bold text-lg">Notes</span>
             <div className="bg-black rounded-xl p-4 mt-2 text-white text-base min-h-[60px]">
-              {order.notes || '无'}
+              {order.notes || 'No notes'}
             </div>
           </div>
           {/* 操作按钮 */}
           <div className="flex gap-4 mt-4">
-            {order.status === 'pending' ? (
+            {order.status === 'completed' ? null : order.status === // 已完成订单不显示底部按钮
+              'pending' ? (
               <>
                 <button
-                  className="flex-1 bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition"
-                  onClick={() => {
-                    setOrderStatus(order.id, 'completed')
-                    onClose()
-                  }}>
-                  Complete Order
+                  className="flex-1 bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition disabled:opacity-50"
+                  onClick={() => handleStatusChange('completed')}
+                  disabled={isUpdating}>
+                  {isUpdating ? 'Processing...' : 'Complete Order'}
                 </button>
-                <button className="flex-1 bg-red-600 text-white font-extrabold rounded-xl py-3 text-xl hover:bg-red-700 transition">
+                <button
+                  className="flex-1 bg-red-600 text-white font-extrabold rounded-xl py-3 text-xl hover:bg-red-700 transition disabled:opacity-50"
+                  disabled={isUpdating}>
                   Reject Order
                 </button>
               </>
             ) : !showCallUber ? (
               <div className="flex w-full gap-4">
                 <button
-                  className="flex-1 bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition"
+                  className="flex-1 bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition disabled:opacity-50"
                   onClick={() => {
                     if (isDelivery) {
                       setShowCallUber(true)
                     } else {
-                      setOrderStatus(order.id, 'pending')
-                      onClose()
+                      handleStatusChange('pending')
                     }
-                  }}>
-                  Accept Order
+                  }}
+                  disabled={isUpdating}>
+                  {isUpdating ? 'Processing...' : 'Accept Order'}
                 </button>{' '}
-                <button className="flex-1 bg-red-600 text-white font-extrabold rounded-xl py-3 text-xl hover:bg-red-700 transition">
+                <button
+                  className="flex-1 bg-red-600 text-white font-extrabold rounded-xl py-3 text-xl hover:bg-red-700 transition disabled:opacity-50"
+                  disabled={isUpdating}>
                   Reject Order
                 </button>
               </div>
             ) : (
               <button
-                className="flex-1 bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2"
-                onClick={() => {
-                  setOrderStatus(order.id, 'pending')
-                  setShowCallUber(false)
-                  onClose()
-                }}>
+                className="flex-1 bg-[#FDC519] text-black font-extrabold rounded-xl py-3 text-xl hover:bg-yellow-400 transition flex items-center justify-center gap-2 disabled:opacity-50"
+                onClick={() => handleStatusChange('pending')}
+                disabled={isUpdating}>
                 <svg
                   width="24"
                   height="24"
@@ -172,7 +196,7 @@ function OrderDetailsModal({
                     strokeLinejoin="round"
                   />
                 </svg>
-                Call Uber Delivery
+                {isUpdating ? 'Processing...' : 'Call Uber Delivery'}
               </button>
             )}
           </div>
@@ -184,10 +208,35 @@ function OrderDetailsModal({
 
 export default function AdminPage() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [tab, setTab] = useState('new')
-  const { orders, modalOpen, modalOrder, openModal, closeModal } =
-    useOrderStore()
-  const filteredOrders = orders.filter((order) => order.status === tab)
+  const [tab, setTab] = useState<'new' | 'pending' | 'completed'>('new')
+
+  // 从store中获取订单相关状态和方法
+  const {
+    orders,
+    isLoading,
+    error,
+    modalOpen,
+    modalOrder,
+    openModal,
+    closeModal,
+    fetchOrdersByStatus,
+  } = useOrderStore()
+
+  // 页面加载时获取订单
+  useEffect(() => {
+    fetchOrdersByStatus(tab)
+  }, [tab, fetchOrdersByStatus])
+
+  // 切换标签时获取对应状态的订单
+  const handleTabChange = (newTab: 'new' | 'pending' | 'completed') => {
+    setTab(newTab)
+    fetchOrdersByStatus(newTab)
+  }
+
+  // 刷新当前标签的订单数据
+  const refreshCurrentTab = () => {
+    fetchOrdersByStatus(tab)
+  }
 
   return (
     <div className="min-h-screen bg-[#363636] flex flex-col items-center w-[400px] mx-auto">
@@ -196,6 +245,7 @@ export default function AdminPage() {
         order={modalOrder}
         open={modalOpen}
         onClose={closeModal}
+        refreshCurrentTab={refreshCurrentTab}
       />
       <div className="w-full bg-[#FDC519] flex items-center justify-between px-4 py-4">
         <div className="flex items-center gap-2">
@@ -248,71 +298,81 @@ export default function AdminPage() {
       <div className="w-full max-w-[400px] px-4 mt-4">
         <div className="flex w-full border border-[#FDC519] rounded-lg overflow-hidden">
           <button
-            className={`flex-1 py-3 font-bold rounded-sm my-1 ml-1 text-lg transition ${
+            className={`flex-1 py-3 text-center font-bold text-lg ${
               tab === 'new'
                 ? 'bg-[#FDC519] text-black'
-                : 'bg-transparent text-white'
+                : 'bg-transparent text-[#FDC519]'
             }`}
-            onClick={() => setTab('new')}>
-            New Orders
+            onClick={() => handleTabChange('new')}>
+            New
           </button>
           <button
-            className={`flex-1 py-3 font-bold text-lg rounded-sm my-1 mr-1 transition ${
+            className={`flex-1 py-3 text-center font-bold text-lg ${
               tab === 'pending'
                 ? 'bg-[#FDC519] text-black'
-                : 'bg-transparent text-white'
+                : 'bg-transparent text-[#FDC519]'
             }`}
-            onClick={() => setTab('pending')}>
-            Pending Orders
+            onClick={() => handleTabChange('pending')}>
+            Processing
+          </button>
+          <button
+            className={`flex-1 py-3 text-center font-bold text-lg ${
+              tab === 'completed'
+                ? 'bg-[#FDC519] text-black'
+                : 'bg-transparent text-[#FDC519]'
+            }`}
+            onClick={() => handleTabChange('completed')}>
+            Completed
           </button>
         </div>
       </div>
-      {/* Orders List */}
-      <div className="w-full max-w-[400px] flex flex-col gap-4 mt-6 px-4 pb-8">
-        {filteredOrders.map((order) => (
+
+      {/* 显示加载状态或错误 */}
+      {isLoading && (
+        <div className="w-full p-4 text-center text-white">
+          Loading orders...
+        </div>
+      )}
+
+      {error && (
+        <div className="w-full p-4 text-center text-red-500">
+          Error: {error}
+        </div>
+      )}
+
+      {/* Order List */}
+      <div className="w-full flex-1 p-4 flex flex-col gap-4">
+        {!isLoading && orders.length === 0 && (
+          <div className="w-full p-4 text-center text-white text-lg">
+            No {tab} orders found.
+          </div>
+        )}
+
+        {orders.map((order) => (
           <div
             key={order.id}
-            className="flex items-center justify-between bg-black rounded-2xl px-6 py-4 shadow-md"
-            style={{ cursor: 'pointer', position: 'relative' }}>
-            <div className="flex flex-col">
-              <span className="text-white font-extrabold text-xl">
-                {order.user.name}
-              </span>
-              <span className="text-gray-300 text-sm mt-1">
-                {order.items.reduce((sum: number, item) => sum + item.qty, 0)}{' '}
-                items
-              </span>
-            </div>
-            <div className="flex justify-between items-center w-[145px]">
-              <div className="flex flex-col items-start">
-                <span className="text-white text-base ">Amount</span>
-                <span className="text-[#FDC519]  font-extrabold text-2xl mt-1">
-                  ${order.totalAmount.toFixed(2)}
-                </span>
+            className="w-full bg-[#222] rounded-2xl p-4 text-white"
+            onClick={() => openModal(order)}>
+            <div className="flex justify-between items-center">
+              <div className="font-bold text-xl">{order.user.name}</div>
+              <div className="font-bold text-lg text-[#FDC519]">
+                ${order.totalAmount.toFixed(2)}
               </div>
-              {/* 圆形按钮，点击弹出详情弹窗 */}
-              <button
-                className="w-10 h-10 rounded-full bg-[#222] flex items-center justify-center border-2 border-gray-400"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  openModal(order)
-                }}>
-                <svg
-                  width="24"
-                  height="24"
-                  fill="none"
-                  stroke="#fff"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="8" stroke="#fff" strokeWidth="2" />
-                  <circle cx="12" cy="12" r="3" fill="#fff" />
-                </svg>
-              </button>
+            </div>
+            <div className="mt-2 flex justify-between">
+              <div>
+                {order.items.reduce((sum, item) => sum + item.qty, 0)} Items
+              </div>
+              <div className="bg-black px-3 py-1 rounded-lg">
+                {order.orderType}
+              </div>
+            </div>
+            <div className="mt-2 text-gray-300 text-sm line-clamp-1">
+              {order.items.map((item) => item.name).join(', ')}
             </div>
           </div>
         ))}
       </div>
-      {/* 订单详情弹窗 */}
     </div>
   )
 }
