@@ -5,10 +5,10 @@ import { TimeInterval } from '@/app/store/opentimeStore'
 // PUT /api/storetime/:day - 更新特定日期的营业时间
 export async function PUT(
   request: Request,
-  { params }: { params: { day: string } }
+  { params }: { params: Promise<{ day: string }> }
 ) {
   try {
-    const day = params.day
+    const day = (await params).day
     // 验证天名称
     const validDays = [
       'Monday',
