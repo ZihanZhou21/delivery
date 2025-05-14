@@ -222,6 +222,10 @@ export default function AdminPage() {
     fetchOrdersByStatus,
   } = useOrderStore()
 
+  // 计算已完成订单的总收入
+  const totalEarning =
+    tab === 'completed' ? orders.reduce((sum, o) => sum + o.totalAmount, 0) : 0
+
   // 页面加载时获取订单
   useEffect(() => {
     fetchOrdersByStatus(tab)
@@ -337,6 +341,15 @@ export default function AdminPage() {
       {error && (
         <div className="w-full p-4 text-center text-red-500">
           Error: {error}
+        </div>
+      )}
+
+      {/* 在已完成订单标签页显示总收入 */}
+      {tab === 'completed' && !isLoading && !error && (
+        <div className="w-full flex justify-center mt-4 mb-2">
+          <div className="bg-black rounded-xl px-6 py-3 text-[#FDC519] text-xl font-extrabold">
+            Total Earning: ${totalEarning.toFixed(2)}
+          </div>
         </div>
       )}
 

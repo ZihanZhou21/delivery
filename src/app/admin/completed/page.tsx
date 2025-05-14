@@ -114,10 +114,6 @@ export default function CompletedOrdersPage() {
   const completedOrders = Array.isArray(orders)
     ? orders.filter((o) => o.status === 'completed')
     : []
-  const totalEarning = completedOrders.reduce(
-    (sum, o) => sum + o.totalAmount,
-    0
-  )
   const [modalOpen, setModalOpen] = useState(false)
   const [modalOrder, setModalOrder] = useState<Order | null>(null)
 
@@ -158,9 +154,6 @@ export default function CompletedOrdersPage() {
           COMPLETED ORDERS
         </span>
         <div className="mt-4 w-full flex flex-col items-center">
-          <div className="bg-black rounded-xl px-6 py-3 text-[#FDC519] text-xl font-extrabold mb-4">
-            Total Earning: ${totalEarning.toFixed(2)}
-          </div>
           <div className="flex items-center gap-2 w-[220px] mb-6">
             <div className="flex-1 bg-[#363636] border border-[#FDC519] rounded-lg px-4 py-2 text-white font-bold flex items-center">
               Today

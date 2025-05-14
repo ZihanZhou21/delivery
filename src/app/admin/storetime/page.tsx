@@ -239,28 +239,28 @@ export default function StoreTimePage() {
       if (!isValidTimeFormat(interval.open)) {
         return {
           isValid: false,
-          error: `${dayName} (间隔 ${intervalNum})的开始时间格式无效。请使用 HH:MM.`,
+          error: `${dayName} (Interval ${intervalNum}) has invalid start time format. Please use HH:MM.`,
         }
       }
       if (!isValidTimeFormat(interval.close)) {
         return {
           isValid: false,
-          error: `${dayName} (间隔 ${intervalNum})的结束时间格式无效。请使用 HH:MM.`,
+          error: `${dayName} (Interval ${intervalNum}) has invalid end time format. Please use HH:MM.`,
         }
       }
       if (!isStartBeforeEnd(interval.open, interval.close)) {
         return {
           isValid: false,
-          error: `${dayName} (间隔 ${intervalNum})的开始时间(${interval.open})必须早于结束时间(${interval.close}).`,
+          error: `${dayName} (Interval ${intervalNum}) start time (${interval.open}) must be earlier than end time (${interval.close}).`,
         }
       }
     }
 
-    // 检查当前天的时间间隔内是否有重叠
+    // Check for overlapping intervals within the current day
     if (hasOverlappingIntervals(day.intervals)) {
       return {
         isValid: false,
-        error: `${dayName}的时间间隔有重叠。请更正。`,
+        error: `${dayName} has overlapping time intervals. Please correct them.`,
       }
     }
 
