@@ -300,7 +300,7 @@ export default function AdminPage() {
         refreshCurrentTab={refreshCurrentTab}
       />
       {/* Tabs - 固定在header下方 */}
-      <div className="w-full max-w-[400px] px-4 mt-4 sticky top-[72px] z-10 bg-[#363636]">
+      <div className="w-full max-w-[400px] px-4 my-4 sticky top-[72px] z-10 bg-[#363636]">
         <div className="flex w-full border border-[#FDC519] rounded-lg overflow-hidden">
           <button
             className={`flex-1 py-3 text-center font-bold text-lg ${
@@ -347,7 +347,7 @@ export default function AdminPage() {
 
       {/* 在已完成订单标签页显示总收入 - 固定在tabs下方 */}
       {tab === 'completed' && !isLoading && !error && (
-        <div className="w-full flex justify-center mt-4 mb-2 sticky top-[136px] z-10 bg-[#363636] pb-2">
+        <div className="w-full flex justify-center mb-2 sticky top-[136px] z-10 bg-[#363636] pb-2">
           <div className="bg-black rounded-xl px-6 py-3 text-[#FDC519] text-xl font-extrabold">
             Total Earning: ${totalEarning.toFixed(2)}
           </div>
