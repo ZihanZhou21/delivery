@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export default function TopBar() {
   return (
-    <div className="w-full flex items-center justify-between bg-[#FDC519] px-4 py-3 rounded-t-2xl">
+    <div className="w-full flex items-center justify-between bg-[#FDC519] px-4 py-3 sticky top-0 z-20">
       <div className="flex items-center gap-2 p-2">
         <Link href="/">
           <Image

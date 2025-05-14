@@ -243,15 +243,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#363636] flex flex-col items-center w-[400px] mx-auto">
-      {/* Header */}
-      <OrderDetailsModal
-        order={modalOrder}
-        open={modalOpen}
-        onClose={closeModal}
-        refreshCurrentTab={refreshCurrentTab}
-      />
-      <div className="w-full bg-[#FDC519] flex items-center justify-between px-4 py-4">
+    <div className="min-h-screen bg-[#363636] flex flex-col items-center w-[400px] mx-auto ">
+      {/* Header - 固定在顶部 */}
+      <div className="w-full bg-[#FDC519] flex items-center justify-between px-4 py-4 sticky top-0 z-20">
         <div className="flex items-center gap-2">
           <Image src="/egg-logo.png" alt="logo" width={80} height={50} />
           <div className="flex flex-col ml-2">
@@ -298,8 +292,15 @@ export default function AdminPage() {
           )}
         </div>
       </div>
-      {/* Tabs */}
-      <div className="w-full max-w-[400px] px-4 mt-4">
+
+      <OrderDetailsModal
+        order={modalOrder}
+        open={modalOpen}
+        onClose={closeModal}
+        refreshCurrentTab={refreshCurrentTab}
+      />
+      {/* Tabs - 固定在header下方 */}
+      <div className="w-full max-w-[400px] px-4 mt-4 sticky top-[72px] z-10 bg-[#363636]">
         <div className="flex w-full border border-[#FDC519] rounded-lg overflow-hidden">
           <button
             className={`flex-1 py-3 text-center font-bold text-lg ${
@@ -344,17 +345,23 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* 在已完成订单标签页显示总收入 */}
+      {/* 在已完成订单标签页显示总收入 - 固定在tabs下方 */}
       {tab === 'completed' && !isLoading && !error && (
-        <div className="w-full flex justify-center mt-4 mb-2">
+        <div className="w-full flex justify-center mt-4 mb-2 sticky top-[136px] z-10 bg-[#363636] pb-2">
           <div className="bg-black rounded-xl px-6 py-3 text-[#FDC519] text-xl font-extrabold">
             Total Earning: ${totalEarning.toFixed(2)}
           </div>
         </div>
       )}
 
-      {/* Order List */}
-      <div className="w-full flex-1 p-4 flex flex-col gap-4">
+      {/* Order List - 可滚动区域 */}
+      <div
+        className="w-full flex-1 p-4 flex flex-col gap-4 overflow-auto"
+        style={{
+          maxHeight:
+            tab === 'completed' ? 'calc(100vh - 240px)' : 'calc(100vh - 168px)',
+          paddingBottom: '20px',
+        }}>
         {!isLoading && orders.length === 0 && (
           <div className="w-full p-4 text-center text-white text-lg">
             No {tab} orders found.
