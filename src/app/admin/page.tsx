@@ -356,7 +356,7 @@ export default function AdminPage() {
 
       {/* Order List - 可滚动区域 */}
       <div
-        className="w-full flex-1 p-4 flex flex-col gap-4 overflow-auto"
+        className="w-full flex-1 px-4 pb-4 flex flex-col gap-4 overflow-auto"
         style={{
           maxHeight:
             tab === 'completed' ? 'calc(100vh - 240px)' : 'calc(100vh - 168px)',
