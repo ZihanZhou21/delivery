@@ -4,43 +4,37 @@ import { StoreTimeDay, TimeInterval } from '@/app/store/opentimeStore'
 let storeHours: StoreTimeDay[] = [
   {
     day: 'Monday',
-    intervals: [{ open: '18:30', close: '23:30' }],
+    intervals: [{ open: '08:00', close: '23:30' }],
     closed: false,
   },
   {
     day: 'Tuesday',
-    intervals: [],
-    closed: true,
+    intervals: [{ open: '08:00', close: '23:30' }],
+    closed: false,
   },
   {
     day: 'Wednesday',
-    intervals: [{ open: '18:30', close: '23:30' }],
+    intervals: [{ open: '08:00', close: '23:30' }],
     closed: false,
   },
   {
     day: 'Thursday',
-    intervals: [{ open: '18:30', close: '23:30' }],
+    intervals: [{ open: '08:00', close: '23:30' }],
     closed: false,
   },
   {
     day: 'Friday',
-    intervals: [{ open: '18:00', close: '24:00' }],
+    intervals: [{ open: '08:00', close: '23:30' }],
     closed: false,
   },
   {
     day: 'Saturday',
-    intervals: [
-      { open: '00:00', close: '01:30' },
-      { open: '18:00', close: '24:00' },
-    ],
+    intervals: [{ open: '08:00', close: '23:30' }],
     closed: false,
   },
   {
     day: 'Sunday',
-    intervals: [
-      { open: '00:00', close: '01:30' },
-      { open: '18:00', close: '23:30' },
-    ],
+    intervals: [{ open: '08:00', close: '23:30' }],
     closed: false,
   },
 ]
