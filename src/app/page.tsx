@@ -41,7 +41,7 @@ export default function Home() {
         <TopBar />
         <div className="w-full px-4 py-6 flex flex-col gap-2 pb-24">
           <div className="text-white text-2xl font-bold text-center mt-2 py-6">
-            Welcome to The Egg Eatery & Indian Cafe.
+            Welcome to The Egg Eatery & Indian Cafe
           </div>
           <StoreNotice onVisibleChange={setShowNotice} />
           {!showNotice && (
